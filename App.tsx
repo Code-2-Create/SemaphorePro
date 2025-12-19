@@ -246,10 +246,10 @@ const App: React.FC = () => {
            </div>
            <div className="space-y-1">
              <p className="text-sm text-slate-500 font-bold">
-                Made by Vinayak Sen, NCC NAVAL WING, 1 MP NAVAL UNIT BHOPAL
+                Developed by Vinayak Sen, NCC NAVAL WING LNCT, 1 MP NAVAL UNIT BHOPAL
              </p>
              <p className="text-xs text-slate-400 font-medium">
-               © 2025 Semaphore Pro • Excellence in Signal Training • Version 2.0
+               © 2025 Semaphore Pro • 2025 • Version 2.0
              </p>
            </div>
         </div>
