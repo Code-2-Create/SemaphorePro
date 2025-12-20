@@ -46,32 +46,63 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     if (!text) return [];
 
     const queue: string[] = [];
+    let inNumberMode = false;
     
-    for (const char of text.toUpperCase()) {
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i].toUpperCase();
+      
       // Handle special symbols first
       if (SYMBOL_TO_GROUP[char]) {
+        // Exit number mode if we were in it
+        if (inNumberMode) {
+          queue.push("#"); // Close NUM
+          inNumberMode = false;
+        }
         const group = SYMBOL_TO_GROUP[char];
         for (const g of group) queue.push(g);
         continue;
       }
 
-      // Handle numbers: NUM + word + NUM
+      // Handle numbers: NUM + words + NUM
       if (char >= "0" && char <= "9") {
-        queue.push("#"); // NUM indicator
+        // Start number mode if not already in it
+        if (!inNumberMode) {
+          queue.push("#"); // NUM indicator to start
+          inNumberMode = true;
+        }
+        // Add the word for this digit
         const word = NUMBER_TO_WORD[char];
         for (const letter of word) {
           queue.push(letter);
         }
-        queue.push("#"); // NUM indicator to end
+        // Add space between consecutive numbers
+        if (i + 1 < text.length && text[i + 1] >= "0" && text[i + 1] <= "9") {
+          queue.push(" ");
+        }
       } 
       // Handle spaces
       else if (char === " ") {
+        // Exit number mode if we were in it
+        if (inNumberMode) {
+          queue.push("#"); // Close NUM
+          inNumberMode = false;
+        }
         queue.push(" ");
       } 
       // Handle letters
       else if (char >= "A" && char <= "Z") {
+        // Exit number mode if we were in it
+        if (inNumberMode) {
+          queue.push("#"); // Close NUM
+          inNumberMode = false;
+        }
         queue.push(char);
       }
+    }
+    
+    // Close number mode if still open at end
+    if (inNumberMode) {
+      queue.push("#");
     }
 
     return queue;
