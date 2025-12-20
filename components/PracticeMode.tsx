@@ -348,17 +348,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
             )}
           </div>
 
-          {/* Show what was transmitted */}
-          {transmissionQueue.length > 0 && (
-            <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">
-                Transmitted Signal
-              </p>
-              <p className="text-sm font-mono font-bold text-blue-800 break-all">
-                {transmittedText}
-              </p>
-            </div>
-          )}
+
 
           <textarea
             className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all font-mono text-xl uppercase placeholder:text-slate-300 no-scrollbar shadow-inner"
@@ -390,13 +380,23 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 <i className="fas fa-paper-plane"></i>
               </button>
             ) : (
-              <div className="flex flex-col items-end bg-green-50 p-6 rounded-[1.5rem] border border-green-100 w-full overflow-hidden shadow-sm">
-                <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-2">
-                  Original Secure Message
-                </p>
-                <p className="text-lg font-mono font-bold text-green-800 break-all leading-relaxed">
-                  {decodeSpecialGroups(phrase)}
-                </p>
+              <div className="flex flex-col w-full space-y-3">
+                <div className="flex flex-col items-end bg-green-50 p-6 rounded-[1.5rem] border border-green-100 w-full overflow-hidden shadow-sm">
+                  <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-2">
+                    Original Secure Message
+                  </p>
+                  <p className="text-lg font-mono font-bold text-green-800 break-all leading-relaxed">
+                    {decodeSpecialGroups(phrase)}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end bg-blue-50 p-6 rounded-[1.5rem] border border-blue-100 w-full overflow-hidden shadow-sm">
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2">
+                    Transmitted Signal
+                  </p>
+                  <p className="text-lg font-mono font-bold text-blue-800 break-all leading-relaxed">
+                    {transmittedText}
+                  </p>
+                </div>
               </div>
             )}
           </div>
