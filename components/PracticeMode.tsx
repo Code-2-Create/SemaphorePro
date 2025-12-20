@@ -396,16 +396,17 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           />
 
           <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-            <button
-              onClick={() => {
-                setIsPlaying(true);
-                setCurrentIndex(-1);
-              }}
-              className="group text-blue-600 font-bold hover:text-blue-700 transition-colors flex items-center space-x-3 px-6 py-3 rounded-2xl hover:bg-blue-50"
-            >
-              <i className="fas fa-redo group-hover:rotate-180 transition-transform duration-500"></i>
-              <span>Re-run Sequence</span>
-            </button>
+            {!isFinished && currentIndex < transmissionQueue.length - 1 && (
+              <button
+                onClick={() => {
+                  setIsPlaying(true);
+                }}
+                className="group text-green-600 font-bold hover:text-green-700 transition-colors flex items-center space-x-3 px-6 py-3 rounded-2xl hover:bg-green-50"
+              >
+                <i className="fas fa-play"></i>
+                <span>Resume Transmission</span>
+              </button>
+            )}
 
             {!isFinished ? (
               <button
