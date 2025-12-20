@@ -4,6 +4,8 @@ import {
   GET_CHAR_MAPPING,
   SAMPLE_NAVAL_PHRASES,
   SAMPLE_WORDS,
+  NUMBER_TO_WORD,
+  WORD_TO_NUMBER,
 } from "../constants";
 import { TrainingSession } from "../types";
 import { SPECIAL_GROUPS, SYMBOL_TO_GROUP } from "../constants";
@@ -40,53 +42,34 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     return words.join(" ") + " " + nums.join("");
   };
 
-  // const buildTransmissionQueue = (text: string | undefined) => {
-  //   if (!text) return [];
-  //   const queue: string[] = [];
-  //   let isNumberMode = false;
-
-  //   for (const char of text.toUpperCase()) {
-  //     if (char >= '0' && char <= '9') {
-  //       if (!isNumberMode) {
-  //         queue.push('#');
-  //         isNumberMode = true;
-  //       }
-  //       queue.push(char);
-  //     } else if (char === ' ') {
-  //       isNumberMode = false;
-  //       queue.push(' ');
-  //     } else {
-  //       if (isNumberMode) isNumberMode = false;
-  //       queue.push(char);
-  //     }
-  //   }
-  //   return queue;
-  // };
-
   const buildTransmissionQueue = (text?: string) => {
     if (!text) return [];
 
     const queue: string[] = [];
-    let numberMode = false;
-
+    
     for (const char of text.toUpperCase()) {
+      // Handle special symbols first
       if (SYMBOL_TO_GROUP[char]) {
         const group = SYMBOL_TO_GROUP[char];
         for (const g of group) queue.push(g);
         continue;
       }
 
+      // Handle numbers: NUM + word + NUM
       if (char >= "0" && char <= "9") {
-        if (!numberMode) {
-          queue.push("#");
-          numberMode = true;
+        queue.push("#"); // NUM indicator
+        const word = NUMBER_TO_WORD[char];
+        for (const letter of word) {
+          queue.push(letter);
         }
-        queue.push(char);
-      } else if (char === " ") {
-        numberMode = false;
+        queue.push("#"); // NUM indicator to end
+      } 
+      // Handle spaces
+      else if (char === " ") {
         queue.push(" ");
-      } else if (char >= "A" && char <= "Z") {
-        numberMode = false;
+      } 
+      // Handle letters
+      else if (char >= "A" && char <= "Z") {
         queue.push(char);
       }
     }
@@ -99,6 +82,22 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     Object.entries(SPECIAL_GROUPS).forEach(([group, symbol]) => {
       result = result.replaceAll(group, symbol);
     });
+    return result;
+  };
+
+  const decodeTransmission = (transmitted: string) => {
+    let result = transmitted;
+    
+    // First decode special groups
+    result = decodeSpecialGroups(result);
+    
+    // Now decode number words back to digits
+    // Pattern: find sequences like "NUM ZRO NUM" or "NUM ONE NUM"
+    Object.entries(WORD_TO_NUMBER).forEach(([word, digit]) => {
+      const pattern = new RegExp(`#${word}#`, 'g');
+      result = result.replace(pattern, digit);
+    });
+    
     return result;
   };
 
@@ -167,18 +166,6 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     setIsFinished(true);
   };
 
-  // const calculateAccuracy = (original: string | undefined, user: string | undefined) => {
-  //   const o = (original || "").toUpperCase().replace(/\s/g, '');
-  //   const u = (user || "").toUpperCase().replace(/\s/g, '');
-  //   let matches = 0;
-  //   const len = Math.max(o.length, u.length);
-  //   if (len === 0) return 100;
-  //   for (let i = 0; i < Math.min(o.length, u.length); i++) {
-  //     if (o[i] === u[i]) matches++;
-  //   }
-  //   return Math.round((matches / len) * 100);
-  // };
-
   const calculateAccuracy = (original?: string, user?: string) => {
     const o = decodeSpecialGroups((original || "").toUpperCase()).replace(
       /\s/g,
@@ -202,6 +189,9 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       ? transmissionQueue[currentIndex]
       : " ";
   const currentSignal = GET_CHAR_MAPPING(currentChar);
+
+  // Create display version of the transmission (what was actually transmitted)
+  const transmittedText = transmissionQueue.join("").replace(/#/g, "NUM ");
 
   return (
     <div className="flex flex-col items-center space-y-8 w-full max-w-4xl">
@@ -287,7 +277,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           {/* Real-time Hint Overlay */}
           {isPlaying && showHints && currentChar !== " " && (
             <div className="absolute top-0 bg-white/90 backdrop-blur-sm border-2 border-amber-500 text-amber-600 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black shadow-xl z-20 animate-bounce">
-              {currentChar === "#" ? "#" : currentChar}
+              {currentChar === "#" ? "NUM" : currentChar}
             </div>
           )}
 
@@ -308,7 +298,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 <span>
                   Signal:{" "}
                   {currentChar === "#"
-                    ? "NUMERIC"
+                    ? "NUM"
                     : currentChar === " "
                     ? "REST"
                     : currentChar}
@@ -358,6 +348,18 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
             )}
           </div>
 
+          {/* Show what was transmitted */}
+          {transmissionQueue.length > 0 && (
+            <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2">
+                Transmitted Signal
+              </p>
+              <p className="text-sm font-mono font-bold text-blue-800 break-all">
+                {transmittedText}
+              </p>
+            </div>
+          )}
+
           <textarea
             className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all font-mono text-xl uppercase placeholder:text-slate-300 no-scrollbar shadow-inner"
             rows={4}
@@ -388,10 +390,6 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 <i className="fas fa-paper-plane"></i>
               </button>
             ) : (
-              // <div className="flex flex-col items-end bg-green-50 p-6 rounded-[1.5rem] border border-green-100 w-full overflow-hidden shadow-sm">
-              //   <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-2">Original Secure Message</p>
-              //   <p className="text-lg font-mono font-bold text-green-800 break-all leading-relaxed">{phrase}</p>
-              // </div>
               <div className="flex flex-col items-end bg-green-50 p-6 rounded-[1.5rem] border border-green-100 w-full overflow-hidden shadow-sm">
                 <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-2">
                   Original Secure Message
