@@ -55,6 +55,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       if (SYMBOL_TO_GROUP[char]) {
         // Exit number mode if we were in it
         if (inNumberMode) {
+          queue.push(" ");
           queue.push("#"); // Close NUM
           inNumberMode = false;
         }
@@ -68,6 +69,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         // Start number mode if not already in it
         if (!inNumberMode) {
           queue.push("#"); // NUM indicator to start
+          queue.push(" ");
           inNumberMode = true;
         }
         // Add the word for this digit
@@ -84,6 +86,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       else if (char === " ") {
         // Exit number mode if we were in it
         if (inNumberMode) {
+          queue.push(" ");
           queue.push("#"); // Close NUM
           inNumberMode = false;
         }
@@ -93,6 +96,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       else if (char >= "A" && char <= "Z") {
         // Exit number mode if we were in it
         if (inNumberMode) {
+          queue.push(" ");
           queue.push("#"); // Close NUM
           inNumberMode = false;
         }
@@ -102,6 +106,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     
     // Close number mode if still open at end
     if (inNumberMode) {
+      queue.push(" ");
       queue.push("#");
     }
 
