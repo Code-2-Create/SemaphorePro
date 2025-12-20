@@ -114,7 +114,7 @@ const App: React.FC = () => {
                       <div className="relative z-10">
                          <div className="inline-flex items-center space-x-2 bg-blue-500/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-blue-400/30">
                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                           <span className="text-xs font-bold text-blue-100 uppercase tracking-widest">Elite Training Platform</span>
+                           <span className="text-xs font-bold text-blue-100 uppercase tracking-widest">Ace Your NSC Journey</span>
                          </div>
                          
                          <h2 className="text-5xl font-black mb-6 leading-tight">
@@ -347,10 +347,10 @@ const App: React.FC = () => {
            </div>
            <div className="space-y-1">
              <p className="text-sm text-slate-600 font-bold">
-                Developed by Vinayak Sen, NCC NAVAL WING, 1 MP NAVAL UNIT BHOPAL
+                Developed by Vinayak Sen, NCC NAVAL WING LNCT, 1 MP NAVAL UNIT BHOPAL
              </p>
              <p className="text-xs text-slate-400 font-medium">
-               © 2025 Semaphore Pro • Excellence in Signal Training • Version 2.0
+               © 2025 Semaphore Pro • 2025 • Version 2.0
              </p>
            </div>
         </div>
