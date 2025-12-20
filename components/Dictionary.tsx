@@ -89,13 +89,15 @@ const Dictionary: React.FC = () => {
     : null;
 
   return (
-    <div className="space-y-10 w-full max-w-6xl animate-in fade-in duration-500">
+    <div className="space-y-6 w-full animate-in fade-in duration-500">
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div className="md:col-span-3 bg-white p-6 rounded-3xl shadow-lg border border-slate-100">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h2 className="text-2xl font-bold text-slate-800 flex items-center space-x-2">
-              <i className="fas fa-book-open text-blue-500"></i>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-4 xl:col-span-3 bg-white/80 backdrop-blur-sm p-5 rounded-3xl shadow-lg border border-slate-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+            <h2 className="text-xl font-bold text-slate-800 flex items-center space-x-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+                <i className="fas fa-book-open text-white text-sm"></i>
+              </div>
               <span>Signal Dictionary</span>
             </h2>
 
@@ -104,45 +106,45 @@ const Dictionary: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search anything..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
             {filteredEntries.map((entry) => (
               <button
                 key={entry.char}
                 onClick={() => setSelectedChar(entry.char)}
-                className={`flex flex-col items-center p-3 rounded-2xl transition-all border-2 ${
+                className={`flex flex-col items-center p-3 rounded-xl transition-all border-2 ${
                   selectedChar === entry.char
-                    ? "bg-blue-50 border-blue-500 scale-105 z-10"
-                    : getEntryColor(entry) + " border-transparent hover:border-slate-300"
+                    ? "bg-blue-50 border-blue-500 scale-105 shadow-md z-10"
+                    : getEntryColor(entry) + " border-transparent hover:border-slate-300 hover:shadow-sm"
                 }`}
               >
                 {(entry.type === 'letter' || entry.type === 'indicator' || entry.type === 'rest') && (
-                  <div className="w-12 h-12 flex items-center justify-center">
+                  <div className="w-10 h-10 flex items-center justify-center">
                     <Signalman
                       leftPos={entry.left!}
                       rightPos={entry.right!}
-                      size={40}
+                      size={35}
                       animate={false}
                     />
                   </div>
                 )}
                 {entry.type === 'number' && (
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <span className="text-3xl font-black text-blue-600">{entry.char}</span>
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    <span className="text-2xl font-black text-blue-600">{entry.char}</span>
                   </div>
                 )}
                 {entry.type === 'symbol' && (
-                  <div className="w-12 h-12 flex items-center justify-center">
-                    <span className="text-3xl font-black text-purple-600">{entry.char}</span>
+                  <div className="w-10 h-10 flex items-center justify-center">
+                    <span className="text-2xl font-black text-purple-600">{entry.char}</span>
                   </div>
                 )}
-                <span className="mt-2 font-bold text-slate-700 text-sm">
+                <span className="mt-1 font-bold text-slate-700 text-xs">
                   {getEntryDisplay(entry)}
                 </span>
               </button>
@@ -151,67 +153,68 @@ const Dictionary: React.FC = () => {
             {filteredEntries.length === 0 && (
               <div className="col-span-full py-12 text-center text-slate-400">
                 <i className="fas fa-search text-3xl mb-2 block"></i>
-                <p>No signals match your search.</p>
+                <p className="text-sm">No signals match your search.</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl flex flex-col items-center text-center sticky top-24 h-fit border-t-4 border-blue-500">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center lg:sticky lg:top-24 h-fit border-t-4 border-blue-500">
           {selectedEntry ? (
             <>
               <div className="flex justify-between w-full mb-4 items-center">
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                  Detail View
+                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">
+                  Details
                 </span>
                 <button
                   onClick={() => setSelectedChar(null)}
-                  className="text-slate-500 hover:text-white"
+                  className="text-slate-400 hover:text-white w-8 h-8 rounded-lg hover:bg-slate-700 flex items-center justify-center transition-all"
                 >
                   <i className="fas fa-times"></i>
                 </button>
               </div>
 
-              <h3 className="text-3xl font-black mb-2">
-                {selectedEntry.type === 'letter' && `Letter: ${selectedEntry.char}`}
-                {selectedEntry.type === 'number' && `Number: ${selectedEntry.char}`}
+              <h3 className="text-2xl font-black mb-2">
+                {selectedEntry.type === 'letter' && `${selectedEntry.char}`}
+                {selectedEntry.type === 'number' && `${selectedEntry.char}`}
                 {selectedEntry.type === 'symbol' && selectedEntry.name}
-                {selectedEntry.type === 'indicator' && 'Numeric Indicator'}
-                {selectedEntry.type === 'rest' && 'Rest Position'}
+                {selectedEntry.type === 'indicator' && 'NUM'}
+                {selectedEntry.type === 'rest' && 'REST'}
               </h3>
 
-              <p className="text-sm text-slate-400 mb-6">
+              <p className="text-xs text-slate-400 mb-5">
+                {selectedEntry.type === 'letter' && 'Letter Signal'}
                 {selectedEntry.type === 'number' && `Transmitted as: ${selectedEntry.word}`}
-                {selectedEntry.type === 'symbol' && `Signal group: ${selectedEntry.group}`}
-                {selectedEntry.type === 'indicator' && 'Marks start/end of numbers'}
-                {selectedEntry.type === 'rest' && 'Space between signals'}
+                {selectedEntry.type === 'symbol' && `Signal: ${selectedEntry.group}`}
+                {selectedEntry.type === 'indicator' && 'Number Marker'}
+                {selectedEntry.type === 'rest' && 'Space / Rest'}
               </p>
 
               {(selectedEntry.type === 'letter' || selectedEntry.type === 'indicator' || selectedEntry.type === 'rest') && (
                 <>
-                  <div className="bg-white rounded-3xl p-6 mb-8 shadow-inner">
+                  <div className="bg-white rounded-2xl p-5 mb-6 shadow-lg">
                     <Signalman
                       leftPos={selectedEntry.left!}
                       rightPos={selectedEntry.right!}
-                      size={220}
+                      size={Math.min(window.innerWidth - 150, 200)}
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-xs w-full">
-                    <div className="bg-slate-800 p-4 rounded-2xl text-center border border-slate-700/50">
-                      <span className="block text-slate-500 font-bold uppercase mb-1">
+                  <div className="grid grid-cols-2 gap-2 text-xs w-full">
+                    <div className="bg-slate-800 p-3 rounded-xl text-center border border-slate-700/50">
+                      <span className="block text-slate-500 font-bold uppercase text-[9px] mb-1">
                         Left Arm
                       </span>
-                      <span className="font-mono text-blue-300 text-lg">
+                      <span className="font-mono text-blue-300 text-base font-bold">
                         Pos {selectedEntry.left}
                       </span>
                     </div>
 
-                    <div className="bg-slate-800 p-4 rounded-2xl text-center border border-slate-700/50">
-                      <span className="block text-slate-500 font-bold uppercase mb-1">
+                    <div className="bg-slate-800 p-3 rounded-xl text-center border border-slate-700/50">
+                      <span className="block text-slate-500 font-bold uppercase text-[9px] mb-1">
                         Right Arm
                       </span>
-                      <span className="font-mono text-blue-300 text-lg">
+                      <span className="font-mono text-blue-300 text-base font-bold">
                         Pos {selectedEntry.right}
                       </span>
                     </div>
@@ -220,23 +223,23 @@ const Dictionary: React.FC = () => {
               )}
 
               {selectedEntry.type === 'number' && (
-                <div className="w-full space-y-4">
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700/50">
-                    <span className="block text-slate-500 font-bold uppercase text-xs mb-3">
-                      Transmission Format
+                <div className="w-full space-y-3">
+                  <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
+                    <span className="block text-slate-500 font-bold uppercase text-[9px] mb-2">
+                      Format
                     </span>
-                    <div className="font-mono text-blue-300 text-lg space-y-2">
-                      <div className="text-amber-400">NUM</div>
-                      <div className="text-2xl text-white">{selectedEntry.word}</div>
-                      <div className="text-amber-400">NUM</div>
+                    <div className="font-mono text-blue-300 text-sm space-y-1">
+                      <div className="text-amber-400 text-xs">NUM</div>
+                      <div className="text-lg text-white font-black">{selectedEntry.word}</div>
+                      <div className="text-amber-400 text-xs">NUM</div>
                     </div>
                   </div>
-                  <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 text-left">
-                    <span className="block text-slate-500 font-bold uppercase text-xs mb-2">
-                      Example Usage
+                  <div className="bg-slate-800 p-3 rounded-xl border border-slate-700/50 text-left">
+                    <span className="block text-slate-500 font-bold uppercase text-[9px] mb-2">
+                      Example
                     </span>
-                    <p className="text-sm text-slate-300 font-mono">
-                      "ZONE {selectedEntry.char}"<br/>
+                    <p className="text-xs text-slate-300 font-mono">
+                      ZONE {selectedEntry.char}<br/>
                       → ZONE NUM {selectedEntry.word} NUM
                     </p>
                   </div>
@@ -244,23 +247,23 @@ const Dictionary: React.FC = () => {
               )}
 
               {selectedEntry.type === 'symbol' && (
-                <div className="w-full space-y-4">
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700/50">
-                    <div className="text-6xl mb-4 text-purple-400">{selectedEntry.char}</div>
+                <div className="w-full space-y-3">
+                  <div className="bg-slate-800 p-5 rounded-xl border border-slate-700/50">
+                    <div className="text-5xl mb-3 text-purple-400">{selectedEntry.char}</div>
                   </div>
-                  <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700/50">
-                    <span className="block text-slate-500 font-bold uppercase text-xs mb-3">
-                      Signal Sequence
+                  <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
+                    <span className="block text-slate-500 font-bold uppercase text-[9px] mb-2">
+                      Sequence
                     </span>
-                    <div className="font-mono text-blue-300 text-2xl">
+                    <div className="font-mono text-blue-300 text-xl font-black">
                       {selectedEntry.group}
                     </div>
                   </div>
-                  <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700/50 text-left">
-                    <span className="block text-slate-500 font-bold uppercase text-xs mb-2">
-                      Letter Breakdown
+                  <div className="bg-slate-800 p-3 rounded-xl border border-slate-700/50 text-left">
+                    <span className="block text-slate-500 font-bold uppercase text-[9px] mb-2">
+                      Breakdown
                     </span>
-                    <p className="text-sm text-slate-300 font-mono">
+                    <p className="text-xs text-slate-300 font-mono">
                       {selectedEntry.group!.split('').join(' → ')}
                     </p>
                   </div>
@@ -268,19 +271,19 @@ const Dictionary: React.FC = () => {
               )}
             </>
           ) : (
-            <div className="py-20 space-y-6">
-              <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-hand-pointer text-3xl text-blue-400 animate-bounce"></i>
+            <div className="py-12 space-y-4">
+              <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <i className="fas fa-hand-pointer text-2xl text-blue-400 animate-bounce"></i>
               </div>
-              <p className="font-bold text-slate-400">
-                Select any character to inspect its semaphore signal.
+              <p className="font-bold text-sm text-slate-400">
+                Select any character
               </p>
-              <div className="text-xs text-slate-500 space-y-1">
-                <p><span className="text-slate-400">•</span> Letters A-Z</p>
-                <p><span className="text-blue-400">•</span> Numbers 0-9</p>
-                <p><span className="text-purple-400">•</span> Special Symbols</p>
-                <p><span className="text-amber-400">•</span> NUM Indicator</p>
-                <p><span className="text-green-400">•</span> Rest Position</p>
+              <div className="text-[10px] text-slate-500 space-y-1">
+                <p><span className="inline-block w-2 h-2 rounded-full bg-slate-400 mr-1"></span> Letters A-Z</p>
+                <p><span className="inline-block w-2 h-2 rounded-full bg-blue-400 mr-1"></span> Numbers 0-9</p>
+                <p><span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-1"></span> Symbols</p>
+                <p><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></span> NUM</p>
+                <p><span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-1"></span> REST</p>
               </div>
             </div>
           )}
