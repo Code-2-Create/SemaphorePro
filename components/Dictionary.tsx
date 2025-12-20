@@ -294,4 +294,8 @@ const Dictionary: React.FC = () => {
 };
 
 
+<<<<<<< HEAD
 export default Dictionary;
+=======
+export default Dictionary;
+>>>>>>> 85d1436 (vs code to github)
