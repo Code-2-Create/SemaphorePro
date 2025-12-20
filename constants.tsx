@@ -42,17 +42,43 @@ export const SEMAPHORE_MAP: SignalMapping[] = [
   { char: 'Z', left: 3, right: 7 },
   { char: ' ', left: 0, right: 0 }, // Rest position
   { char: '#', left: 4, right: 5 }, // Numeric Indicator
-  // Digits mapping to A-J/K
-  { char: '1', left: 0, right: 1 }, // A
-  { char: '2', left: 0, right: 2 }, // B
-  { char: '3', left: 0, right: 3 }, // C
-  { char: '4', left: 0, right: 4 }, // D
-  { char: '5', left: 5, right: 0 }, // E
-  { char: '6', left: 6, right: 0 }, // F
-  { char: '7', left: 7, right: 0 }, // G
-  { char: '8', left: 1, right: 2 }, // H
-  { char: '9', left: 1, right: 3 }, // I
-  { char: '0', left: 1, right: 4 }, // K
+];
+
+// Number to word mappings for naval transmission
+export const NUMBER_TO_WORD: Record<string, string> = {
+  '0': 'ZRO',
+  '1': 'ONE',
+  '2': 'TWO',
+  '3': 'TRE',
+  '4': 'FOR',
+  '5': 'FIV',
+  '6': 'SIX',
+  '7': 'SVN',
+  '8': 'ATE',
+  '9': 'NIN'
+};
+
+// Reverse mapping for decoding
+export const WORD_TO_NUMBER: Record<string, string> = {
+  'ZRO': '0',
+  'ONE': '1',
+  'TWO': '2',
+  'TRE': '3',
+  'FOR': '4',
+  'FIV': '5',
+  'SIX': '6',
+  'SVN': '7',
+  'ATE': '8',
+  'NIN': '9'
+};
+
+export const SPECIAL_SYMBOL_DICTIONARY = [
+  { group: "KN", symbol: "(", name: "Open Bracket" },
+  { group: "KK", symbol: ")", name: "Close Bracket" },
+  { group: "AAA", symbol: ".", name: "Full Stop" },
+  { group: "MIM", symbol: ",", name: "Comma" },
+  { group: "DU", symbol: "-", name: "Hyphen / Dash" },
+  { group: "XE", symbol: "/", name: "Slash" }
 ];
 
 export const SPECIAL_GROUPS: Record<string, string> = {
@@ -73,23 +99,12 @@ export const SYMBOL_TO_GROUP: Record<string, string> = {
   "/": "XE"
 };
 
-export const SPECIAL_SYMBOL_DICTIONARY = [
-  { group: "KN", symbol: "(", name: "Open Bracket" },
-  { group: "KK", symbol: ")", name: "Close Bracket" },
-  { group: "AAA", symbol: ".", name: "Full Stop" },
-  { group: "MIM", symbol: ",", name: "Comma" },
-  { group: "DU", symbol: "-", name: "Hyphen / Dash" },
-  { group: "XE", symbol: "/", name: "Slash" }
-];
-
-
 
 export const GET_CHAR_MAPPING = (char: string | undefined) => {
   if (!char) return SEMAPHORE_MAP[SEMAPHORE_MAP.length - 1];
   const normalized = char.toUpperCase();
   return SEMAPHORE_MAP.find(m => m.char === normalized) || SEMAPHORE_MAP[SEMAPHORE_MAP.length - 1];
 };
-
 
 export const SAMPLE_WORDS = [
   "EXECUTE", "COASTAL", "SURVEILLANCE", "DRILL", "REDEPLOYMENT", "SECTOR", "ALPHA", "BRAVO", "CHARLIE", "DELTA",
