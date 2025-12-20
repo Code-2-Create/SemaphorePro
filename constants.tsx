@@ -73,6 +73,16 @@ export const SYMBOL_TO_GROUP: Record<string, string> = {
   "/": "XE"
 };
 
+export const SPECIAL_SYMBOL_DICTIONARY = [
+  { group: "KN", symbol: "(", name: "Open Bracket" },
+  { group: "KK", symbol: ")", name: "Close Bracket" },
+  { group: "AAA", symbol: ".", name: "Full Stop" },
+  { group: "MIM", symbol: ",", name: "Comma" },
+  { group: "DU", symbol: "-", name: "Hyphen / Dash" },
+  { group: "XE", symbol: "/", name: "Slash" }
+];
+
+
 
 export const GET_CHAR_MAPPING = (char: string | undefined) => {
   if (!char) return SEMAPHORE_MAP[SEMAPHORE_MAP.length - 1];
