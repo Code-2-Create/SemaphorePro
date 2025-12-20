@@ -1,4 +1,3 @@
-
 import { SignalMapping } from './types';
 
 /**
@@ -35,11 +34,11 @@ export const SEMAPHORE_MAP: SignalMapping[] = [
   { char: 'S', left: 2, right: 7 },
   { char: 'T', left: 3, right: 4 },
   { char: 'U', left: 3, right: 5 },
-  { char: 'V', left: 6, right: 5 }, 
+  { char: 'V', left: 7, right: 4 }, 
   { char: 'W', left: 5, right: 6 },
   { char: 'X', left: 5, right: 7 },
   { char: 'Y', left: 3, right: 6 },
-  { char: 'Z', left: 3, right: 7 },
+  { char: 'Z', left: 6, right: 7 },
   { char: ' ', left: 0, right: 0 }, // Rest position
   { char: '#', left: 4, right: 5 }, // Numeric Indicator
 ];
