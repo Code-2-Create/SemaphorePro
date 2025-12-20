@@ -544,8 +544,4 @@ export const SAMPLE_NAVAL_PHRASES: string[] = [
   "CHECK ( BATTERY - BANK ) FOR RADIO - ROOM .",
   "MISSION ( COMPLETE ) / DISMISS THE WATCH .",
   "STANDBY ( HELO - DECK ) FOR INBOUND FLIGHT ."
-<<<<<<< HEAD
 ];
-=======
-];
->>>>>>> 85d1436 (vs code to github)
