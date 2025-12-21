@@ -68,19 +68,32 @@ const App: React.FC = () => {
       {/* Mobile Header */}
       <header className="bg-white/90 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-50 shadow-lg">
         <div className="px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-3" onClick={() => setMode('HOME')}>
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-600 rounded-xl blur-lg opacity-40"></div>
-              <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
-                <i className="fas fa-anchor text-white text-xl"></i>
-              </div>
-            </div>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setMode('HOME')}>
+            {/* Replace /logo.png with your actual logo path */}
+            <img 
+              src="/logo.png" 
+              alt="Semaphore Pro Logo" 
+              className="w-12 h-12 object-contain"
+              onError={(e) => {
+                // Fallback to icon if image doesn't load
+                e.currentTarget.style.display = 'none';
+                const fallback = document.createElement('div');
+                fallback.className = 'relative';
+                fallback.innerHTML = `
+                  <div class="absolute inset-0 bg-blue-600 rounded-xl blur-lg opacity-40"></div>
+                  <div class="relative bg-gradient-to-br from-blue-600 to-indigo-700 w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
+                    <i class="fas fa-anchor text-white text-xl"></i>
+                  </div>
+                `;
+                e.currentTarget.parentElement!.insertBefore(fallback, e.currentTarget);
+              }}
+            />
             <div>
               <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-slate-800 to-blue-600 bg-clip-text text-transparent">
                 SEMAPHORE PRO
               </h1>
               <p className="text-[8px] font-bold text-slate-500 uppercase tracking-wider leading-none">
-                Naval Training
+                Naval Communication Training
               </p>
             </div>
           </div>
@@ -161,18 +174,18 @@ const App: React.FC = () => {
               <div className="relative z-10">
                 <div className="inline-flex items-center space-x-2 bg-blue-500/20 backdrop-blur-sm px-3 py-2 rounded-full mb-4 border border-blue-400/30">
                   <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                  <span className="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Elite Platform</span>
+                  <span className="text-[10px] font-bold text-blue-100 uppercase tracking-widest">Semaphore Training Platform</span>
                 </div>
                 
-                <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight">
-                  Master Naval<br/>
+                <h2 className="text-3xl md:text-4xl font-black mb-4 leading-tight flex items-center flex-wrap gap-3">
+                  <span>Master Naval</span>
                   <span className="bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
                     Semaphore Signaling
                   </span>
                 </h2>
                 
                 <p className="text-blue-100 text-sm mb-6 leading-relaxed max-w-md">
-                  Ultimate training for NCC Naval Wing cadets. Real-time practice with precision feedback.
+                  The ultimate training ground for NCC Naval Wing cadets preparing for AINSC. Real-time practice with precision feedback.
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-3">
@@ -188,9 +201,13 @@ const App: React.FC = () => {
                     className="bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/30 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-500/30 transition-all flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-book-open"></i>
-                    <span>Learn Symbols</span>
+                    <span>Learn Signals</span>
                   </button>
                 </div>
+              </div>
+              
+              <div className="absolute right-[-5%] bottom-[-15%] opacity-10 transform -rotate-12 pointer-events-none">
+                <i className="fas fa-anchor text-[15rem]"></i>
               </div>
             </div>
 
@@ -261,8 +278,10 @@ const App: React.FC = () => {
                           borderRadius: '12px', 
                           border: 'none', 
                           boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                          fontSize: '12px'
+                          fontSize: '12px',
+                          outline: 'none'
                         }}
+                        wrapperStyle={{ outline: 'none' }}
                       />
                       <Area 
                         type="monotone" 
