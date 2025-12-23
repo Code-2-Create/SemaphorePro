@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Signalman from "./Signalman";
 import { SEMAPHORE_MAP } from "../constants";
 import { SPECIAL_SYMBOL_DICTIONARY, NUMBER_TO_WORD } from "../constants";
-import tricksImage from "./tricks.jpeg"; // or './assets/tricks.jpeg' if in a subfolder
+import tricksImage from "./tricks.svg"; // or './assets/tricks.jpeg' if in a subfolder
 
 const Dictionary: React.FC = () => {
   const [selectedChar, setSelectedChar] = useState<string | null>(null);
@@ -398,7 +398,7 @@ const Dictionary: React.FC = () => {
           ))}
         </div>
       </div>
-      )
+      
     </div>
   );
 };
