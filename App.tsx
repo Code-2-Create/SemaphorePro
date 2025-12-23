@@ -388,7 +388,7 @@ const App: React.FC = () => {
               Developed by Vinayak Sen, NCC NAVAL WING LNCT
             </p>
             <p className="text-[10px] text-slate-400 font-medium">
-              1 MP Naval Unit Bhopal • Version 2.0
+              1 MP Naval Unit Bhopal • Version 2.0 • 2025
             </p>
           </div>
         </div>
