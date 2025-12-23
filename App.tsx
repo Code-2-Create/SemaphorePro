@@ -201,7 +201,7 @@ const App: React.FC = () => {
                     className="bg-blue-500/20 backdrop-blur-md border-2 border-blue-400/30 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-500/30 transition-all flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-book-open"></i>
-                    <span>Learn Signals</span>
+                    <span>Learn Symbols</span>
                   </button>
                 </div>
               </div>
