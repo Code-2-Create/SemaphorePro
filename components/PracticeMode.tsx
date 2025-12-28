@@ -19,7 +19,7 @@ interface VoiceGuideModalProps {
   onAccept: () => void;
 }
 
-const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
+const VoiceGuideModal: React. FC<VoiceGuideModalProps> = ({
   open,
   onAccept,
 }) => {
@@ -40,7 +40,7 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
     }, 300);
   };
 
-  if (! open && ! isClosing) return null;
+  if (!open && ! isClosing) return null;
 
   return (
     <div
@@ -189,60 +189,30 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const [isListening, setIsListening] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [showVoiceGuide, setShowVoiceGuide] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   // Refs for Speech Recognition
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
   const listeningRef = useRef(false);
-
-  // NEW: Refs for Audio Context (Continuous Listening)
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-
-  // ============================================
-  // NEW: Keep-Alive Audio Functions
-  // ============================================
-  const startContinuousAudio = async () => {
-    try {
-      const stream = await navigator.mediaDevices. getUserMedia({
-        audio: true,
-      });
-      const audioContext = new (window. AudioContext ||
-        (window as any).webkitAudioContext)();
-      const source = audioContext.createMediaStreamSource(stream);
-
-      // Create a silent processor to keep stream active
-      const processor = audioContext. createScriptProcessor(4096, 1, 1);
-      source.connect(processor);
-      processor.connect(audioContext.destination);
-
-      audioContextRef.current = audioContext;
-      mediaStreamSourceRef.current = source;
-
-      console.log("✅ Continuous audio stream started");
-    } catch (error) {
-      console.error("❌ Microphone access denied or error:", error);
-    }
-  };
-
-  const stopContinuousAudio = () => {
-    try {
-      if (mediaStreamSourceRef.current) {
-        mediaStreamSourceRef.current. disconnect();
-        mediaStreamSourceRef.current = null;
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-      console.log("✅ Continuous audio stream stopped");
-    } catch (error) {
-      console.error("Error stopping audio:", error);
-    }
-  };
+  const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTranscriptRef = useRef<string>("");
+  const speechEndRef = useRef(false);
 
   // ============================================
-  // NEW:  Hybrid Speech Recognition Setup
+  // DETECT MOBILE DEVICE
+  // ============================================
+  useEffect(() => {
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator. userAgent
+      );
+    setIsMobileDevice(isMobile);
+  }, []);
+
+  // ============================================
+  // INITIALIZE SPEECH RECOGNITION WITH MOBILE OPTIMIZATIONS
   // ============================================
   useEffect(() => {
     const SpeechRecognition =
@@ -252,56 +222,121 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     if (SpeechRecognition) {
       setSpeechSupported(true);
       const recognition = new SpeechRecognition();
-      recognition. continuous = true;
-      recognition. interimResults = true; // Get real-time results
+
+      // MOBILE OPTIMIZATIONS
+      recognition.continuous = true;
+      recognition.interimResults = true;
       recognition.lang = "en-US";
       recognition.maxAlternatives = 1;
 
+      // CRITICAL:  Suppress native beep sounds on mobile
+      // Note: We cannot fully prevent beeps, but we can minimize them
+      // by preventing unnecessary start/stop cycles
+      (recognition as any).abort = function () {
+        speechEndRef.current = true;
+        SpeechRecognition.prototype. abort.call(this);
+      };
+
+      recognition.onstart = () => {
+        console.log("🎤 Speech recognition started");
+        speechEndRef.current = false;
+      };
+
       recognition.onresult = (event:  any) => {
-        for (let i = event.resultIndex; i < event.results.length; i++) {
+        // Clear silence timeout on any speech detected
+        if (silenceTimeoutRef.current) {
+          clearTimeout(silenceTimeoutRef.current);
+        }
+
+        let interimTranscript = "";
+        let finalTranscript = "";
+
+        for (let i = event. resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript
-            .trim()
+            . trim()
             .toUpperCase();
 
-          // Only process final results to avoid duplicates
           if (event.results[i].isFinal) {
-            console.log("🎤 Final transcript:", transcript);
-            handleSpeechResult(transcript);
+            finalTranscript += transcript + " ";
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Only process final results to avoid duplicates
+        if (finalTranscript && finalTranscript !== lastTranscriptRef.current) {
+          lastTranscriptRef.current = finalTranscript;
+          console.log("🎤 Final transcript:", finalTranscript);
+          handleSpeechResult(finalTranscript);
+
+          // On mobile, set a silence timeout to handle auto-stop gracefully
+          if (isMobileDevice) {
+            if (silenceTimeoutRef.current) {
+              clearTimeout(silenceTimeoutRef.current);
+            }
+            silenceTimeoutRef.current = setTimeout(() => {
+              if (listeningRef.current && !speechEndRef.current) {
+                console.log("⏱️ Silence detected, keeping listener active.. .");
+                // Don't restart immediately, just log
+              }
+            }, 3000); // 3 second silence timeout
           }
         }
       };
 
-      // Handle errors with immediate restart
       recognition.onerror = (event: any) => {
-        console.warn("🔴 Speech error:", event.error);
+        console.warn("⚠️ Speech error:", event.error);
 
+        // Only restart on recoverable errors
         if (
           listeningRef.current &&
+          ! speechEndRef.current &&
           (event.error === "no-speech" ||
             event.error === "audio-capture" ||
-            event.error === "network" ||
-            event.error === "aborted")
+            event.error === "network")
         ) {
-          setTimeout(() => {
+          // Exponential backoff: start with 200ms delay on mobile
+          const delay = isMobileDevice ? 200 :  100;
+
+          if (restartTimeoutRef.current) {
+            clearTimeout(restartTimeoutRef.current);
+          }
+
+          restartTimeoutRef. current = setTimeout(() => {
             try {
-              recognition.start();
-              console.log("🔄 Restarted after error");
-            } catch (e) {}
-          }, 100);
+              if (listeningRef.current && !speechEndRef.current) {
+                console.log("🔄 Restarting recognition after error...");
+                recognition.start();
+              }
+            } catch (e) {
+              console.error("Failed to restart recognition:", e);
+            }
+          }, delay);
         }
       };
 
-      // Seamless restart on natural end (Android timeout)
-      recognition.onend = () => {
+      recognition. onend = () => {
         console.log("⏹️ Recognition ended");
 
-        if (listeningRef.current) {
-          setTimeout(() => {
+        // Only restart if user hasn't manually stopped
+        if (listeningRef.current && !speechEndRef.current) {
+          // On mobile, add a slight delay before restart to minimize beeps
+          const delay = isMobileDevice ? 300 : 100;
+
+          if (restartTimeoutRef.current) {
+            clearTimeout(restartTimeoutRef.current);
+          }
+
+          restartTimeoutRef.current = setTimeout(() => {
             try {
-              recognition.start();
-              console.log("🔄 Seamlessly restarted after timeout");
-            } catch (e) {}
-          }, 100);
+              if (listeningRef.current && !speechEndRef.current) {
+                console.log("🔄 Seamlessly restarting after timeout...");
+                recognition.start();
+              }
+            } catch (e) {
+              console.error("Failed to restart recognition:", e);
+            }
+          }, delay);
         }
       };
 
@@ -310,18 +345,31 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
 
     return () => {
       listeningRef.current = false;
-      stopContinuousAudio();
+      speechEndRef.current = true;
+
+      // Clear all pending timeouts
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+      }
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+      }
+
       if (recognitionRef.current) {
-        recognitionRef.current. stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.error("Error stopping recognition:", e);
+        }
       }
     };
-  }, []);
+  }, [isMobileDevice]);
 
   // Stop voice when finished
   useEffect(() => {
     if (isFinished && isListening) {
       listeningRef.current = false;
-      stopContinuousAudio();
+      speechEndRef.current = true;
       recognitionRef.current?.stop();
       setIsListening(false);
     }
@@ -380,45 +428,59 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const canStartVoiceInput =
     phrase.length > 0 && transmissionQueue.length > 0 && !isFinished;
 
-  // NEW: Start audio when toggling voice input
   const toggleSpeechRecognition = () => {
     if (! speechSupported || !canStartVoiceInput) return;
     const hasSeenGuide = localStorage.getItem("voiceGuideSeen");
 
     if (isListening) {
       listeningRef.current = false;
-      stopContinuousAudio(); // Stop audio stream
-      recognitionRef.current?. stop();
+      speechEndRef.current = true;
+      recognitionRef.current?.stop();
       setIsListening(false);
+
+      // Clear all timeouts
+      if (silenceTimeoutRef.current) {
+        clearTimeout(silenceTimeoutRef.current);
+      }
+      if (restartTimeoutRef. current) {
+        clearTimeout(restartTimeoutRef.current);
+      }
     } else {
       if (! hasSeenGuide) {
         setShowVoiceGuide(true);
         return;
       }
 
-      startContinuousAudio(); // Start audio stream
       listeningRef.current = true;
+      speechEndRef.current = false;
+      lastTranscriptRef.current = "";
+
       try {
-        recognitionRef.current?.start();
+        recognitionRef.current?. start();
         setIsListening(true);
+        console.log("🎙️ Voice input started");
       } catch (e) {
         console.error("Failed to start recognition:", e);
+        setIsListening(false);
       }
     }
   };
 
-  // NEW: Start audio when accepting voice guide
   const acceptVoiceGuide = () => {
     localStorage.setItem("voiceGuideSeen", "true");
     setShowVoiceGuide(false);
 
-    startContinuousAudio(); // Start audio stream
     listeningRef.current = true;
+    speechEndRef.current = false;
+    lastTranscriptRef.current = "";
+
     try {
-      recognitionRef. current?.start();
+      recognitionRef.current?.start();
       setIsListening(true);
+      console.log("🎙️ Voice input started from guide");
     } catch (e) {
       console.error("Failed to start recognition:", e);
+      setIsListening(false);
     }
   };
 
@@ -667,7 +729,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         .hint-badge {
           animation: float 1s ease-in-out infinite;
         }
-        . listening-button {
+        .listening-button {
           animation: glow 2s ease-in-out infinite;
         }
         .result-card {
@@ -734,7 +796,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
             >
               <i className={`fas ${showHints ? "fa-eye" : "fa-eye-slash"}`}></i>
               <span className="text-xs font-black uppercase tracking-wider">
-                {showHints ?  "Hints ON" : "Hints OFF"}
+                {showHints ? "Hints ON" : "Hints OFF"}
               </span>
             </button>
 
@@ -776,7 +838,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 step="1"
                 value={speedLevel}
                 onChange={(e) => setSpeedLevel(parseInt(e.target.value))}
-                className="w-full sm: w-32 accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none transition-all hover:accent-blue-700"
+                className="w-full sm:w-32 accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none transition-all hover:accent-blue-700"
               />
             </div>
           </div>
@@ -873,7 +935,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 </p>
                 <p>
                   <strong>Commands:</strong> NEXT=space | NUM=# | KN=( | KK=) |
-                  AAA=.  | MIM=, | DU=- | XE=/
+                  AAA=. | MIM=, | DU=- | XE=/
                 </p>
               </div>
             </div>
@@ -909,7 +971,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
               </div>
             )}
 
-            {!isFinished ?  (
+            {! isFinished ?  (
               <button
                 onClick={handleSubmit}
                 className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:from-slate-800 hover:to-slate-700 transition-all shadow-xl hover:shadow-2xl active:scale-95 flex items-center justify-center space-x-3 hover:scale-105"
