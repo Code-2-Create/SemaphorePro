@@ -19,7 +19,7 @@ interface VoiceGuideModalProps {
   onAccept: () => void;
 }
 
-const VoiceGuideModal: React. FC<VoiceGuideModalProps> = ({
+const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
   open,
   onAccept,
 }) => {
@@ -40,7 +40,7 @@ const VoiceGuideModal: React. FC<VoiceGuideModalProps> = ({
     }, 300);
   };
 
-  if (!open && !isClosing) return null;
+  if (! open && ! isClosing) return null;
 
   return (
     <div
@@ -86,13 +86,13 @@ const VoiceGuideModal: React. FC<VoiceGuideModalProps> = ({
           }
           @keyframes pulse-icon {
             0%, 100% {
-              transform: scale(1);
+              transform:  scale(1);
             }
             50% {
-              transform: scale(1.1);
+              transform:  scale(1.1);
             }
           }
-          .voice-guide-icon {
+          . voice-guide-icon {
             animation: pulse-icon 2s ease-in-out infinite;
           }
         `}</style>
@@ -190,10 +190,60 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const [speechSupported, setSpeechSupported] = useState(false);
   const [showVoiceGuide, setShowVoiceGuide] = useState(false);
 
+  // Refs for Speech Recognition
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
   const listeningRef = useRef(false);
 
+  // NEW: Refs for Audio Context (Continuous Listening)
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+
+  // ============================================
+  // NEW: Keep-Alive Audio Functions
+  // ============================================
+  const startContinuousAudio = async () => {
+    try {
+      const stream = await navigator.mediaDevices. getUserMedia({
+        audio: true,
+      });
+      const audioContext = new (window. AudioContext ||
+        (window as any).webkitAudioContext)();
+      const source = audioContext.createMediaStreamSource(stream);
+
+      // Create a silent processor to keep stream active
+      const processor = audioContext. createScriptProcessor(4096, 1, 1);
+      source.connect(processor);
+      processor.connect(audioContext.destination);
+
+      audioContextRef.current = audioContext;
+      mediaStreamSourceRef.current = source;
+
+      console.log("✅ Continuous audio stream started");
+    } catch (error) {
+      console.error("❌ Microphone access denied or error:", error);
+    }
+  };
+
+  const stopContinuousAudio = () => {
+    try {
+      if (mediaStreamSourceRef.current) {
+        mediaStreamSourceRef.current. disconnect();
+        mediaStreamSourceRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+      console.log("✅ Continuous audio stream stopped");
+    } catch (error) {
+      console.error("Error stopping audio:", error);
+    }
+  };
+
+  // ============================================
+  // NEW:  Hybrid Speech Recognition Setup
+  // ============================================
   useEffect(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -203,18 +253,28 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       setSpeechSupported(true);
       const recognition = new SpeechRecognition();
       recognition. continuous = true;
-      recognition. interimResults = false;
+      recognition. interimResults = true; // Get real-time results
       recognition.lang = "en-US";
       recognition.maxAlternatives = 1;
 
       recognition.onresult = (event:  any) => {
-        const transcript = event.results[event.results.length - 1][0].transcript
-          .trim()
-          .toUpperCase();
-        handleSpeechResult(transcript);
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript
+            .trim()
+            .toUpperCase();
+
+          // Only process final results to avoid duplicates
+          if (event.results[i].isFinal) {
+            console.log("🎤 Final transcript:", transcript);
+            handleSpeechResult(transcript);
+          }
+        }
       };
 
+      // Handle errors with immediate restart
       recognition.onerror = (event: any) => {
+        console.warn("🔴 Speech error:", event.error);
+
         if (
           listeningRef.current &&
           (event.error === "no-speech" ||
@@ -225,18 +285,23 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           setTimeout(() => {
             try {
               recognition.start();
+              console.log("🔄 Restarted after error");
             } catch (e) {}
-          }, 500);
+          }, 100);
         }
       };
 
-      recognition. onend = () => {
+      // Seamless restart on natural end (Android timeout)
+      recognition.onend = () => {
+        console.log("⏹️ Recognition ended");
+
         if (listeningRef.current) {
           setTimeout(() => {
             try {
               recognition.start();
+              console.log("🔄 Seamlessly restarted after timeout");
             } catch (e) {}
-          }, 500);
+          }, 100);
         }
       };
 
@@ -245,13 +310,18 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
 
     return () => {
       listeningRef.current = false;
-      if (recognitionRef.current) recognitionRef.current.stop();
+      stopContinuousAudio();
+      if (recognitionRef.current) {
+        recognitionRef.current. stop();
+      }
     };
   }, []);
 
+  // Stop voice when finished
   useEffect(() => {
     if (isFinished && isListening) {
       listeningRef.current = false;
+      stopContinuousAudio();
       recognitionRef.current?.stop();
       setIsListening(false);
     }
@@ -262,6 +332,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     words.forEach((word) => {
       const upperWord = word.toUpperCase().trim();
       if (!upperWord) return;
+
       if (upperWord === "NEXT") setUserInput((prev) => prev + " ");
       else if (upperWord === "NUM" || upperWord === "NUMBER")
         setUserInput((prev) => prev + "#");
@@ -272,7 +343,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       else if (upperWord === "MIM") setUserInput((prev) => prev + ",");
       else if (upperWord === "DU") setUserInput((prev) => prev + "-");
       else if (upperWord === "XE") setUserInput((prev) => prev + "/");
-      else if (upperWord. length === 1 && /^[A-Z]$/.test(upperWord))
+      else if (upperWord. length === 1 && /^[A-Z]$/. test(upperWord))
         setUserInput((prev) => prev + upperWord);
       else if (upperWord === "ALPHA") setUserInput((prev) => prev + "A");
       else if (upperWord === "BRAVO") setUserInput((prev) => prev + "B");
@@ -309,11 +380,14 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const canStartVoiceInput =
     phrase.length > 0 && transmissionQueue.length > 0 && !isFinished;
 
+  // NEW: Start audio when toggling voice input
   const toggleSpeechRecognition = () => {
     if (! speechSupported || !canStartVoiceInput) return;
     const hasSeenGuide = localStorage.getItem("voiceGuideSeen");
+
     if (isListening) {
       listeningRef.current = false;
+      stopContinuousAudio(); // Stop audio stream
       recognitionRef.current?. stop();
       setIsListening(false);
     } else {
@@ -321,22 +395,31 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         setShowVoiceGuide(true);
         return;
       }
+
+      startContinuousAudio(); // Start audio stream
       listeningRef.current = true;
       try {
         recognitionRef.current?.start();
         setIsListening(true);
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to start recognition:", e);
+      }
     }
   };
 
+  // NEW: Start audio when accepting voice guide
   const acceptVoiceGuide = () => {
     localStorage.setItem("voiceGuideSeen", "true");
     setShowVoiceGuide(false);
+
+    startContinuousAudio(); // Start audio stream
     listeningRef.current = true;
     try {
-      recognitionRef.current?.start();
+      recognitionRef. current?.start();
       setIsListening(true);
-    } catch (e) {}
+    } catch (e) {
+      console.error("Failed to start recognition:", e);
+    }
   };
 
   const getDelay = (level: number) => Math.max(50, 2000 - level * 19);
@@ -345,7 +428,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     const words:  string[] = [];
     const nums: string[] = [];
     for (let i = 0; i < 40; i++) {
-      words.push(SAMPLE_WORDS[Math.floor(Math.random() * SAMPLE_WORDS.length)]);
+      words.push(SAMPLE_WORDS[Math.floor(Math. random() * SAMPLE_WORDS.length)]);
     }
     for (let i = 0; i < 40; i++) {
       nums.push(Math.floor(Math.random() * 10).toString());
@@ -357,8 +440,10 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     if (!text) return [];
     const queue: string[] = [];
     let inNumberMode = false;
+
     for (let i = 0; i < text.length; i++) {
       const char = text[i]. toUpperCase();
+
       if (SYMBOL_TO_GROUP[char]) {
         if (inNumberMode) {
           queue.push(" ");
@@ -369,6 +454,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         for (const g of group) queue.push(g);
         continue;
       }
+
       if (char >= "0" && char <= "9") {
         if (!inNumberMode) {
           queue.push("#");
@@ -396,10 +482,12 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         queue. push(char);
       }
     }
+
     if (inNumberMode) {
       queue.push(" ");
       queue.push("#");
     }
+
     return queue;
   };
 
@@ -433,8 +521,10 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         pool = SAMPLE_NAVAL_PHRASES.filter((p) => p.split(" ").length > 5);
       }
       newPhrase =
-        pool[Math.floor(Math.random() * pool.length)] || SAMPLE_NAVAL_PHRASES[0];
+        pool[Math.floor(Math.random() * pool.length)] ||
+        SAMPLE_NAVAL_PHRASES[0];
     }
+
     const queue = buildTransmissionQueue(newPhrase);
     setPhrase(newPhrase);
     setTransmissionQueue(queue);
@@ -444,7 +534,6 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     setIsPlaying(true);
   };
 
-  // NEW:  Restart transmission from the beginning
   const restartTransmission = () => {
     setCurrentIndex(-1);
     setIsPlaying(true);
@@ -484,7 +573,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       speedMs: getDelay(speedLevel),
       phrase,
       userPhrase: userInput. toUpperCase(),
-      type: phrase. split(" ").length > 10 ? "Long" : "Short",
+      type: phrase.split(" ").length > 10 ? "Long" : "Short",
     };
     onSessionComplete(session);
     setIsFinished(true);
@@ -495,14 +584,18 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       original.toUpperCase()
     ).replace(/\s+/g, "");
     const normalizedUser = user.toUpperCase().replace(/\s+/g, "");
+
     if (normalizedOriginal. length === 0) return 100;
     if (normalizedUser.length === 0) return 0;
+
     const levenshteinDistance = (a: string, b: string): number => {
       const dp:  number[][] = Array(a.length + 1)
         .fill(null)
         .map(() => Array(b.length + 1).fill(0));
+
       for (let i = 0; i <= a.length; i++) dp[i][0] = i;
       for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+
       for (let i = 1; i <= a.length; i++) {
         for (let j = 1; j <= b.length; j++) {
           if (a[i - 1] === b[j - 1]) {
@@ -513,14 +606,17 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           }
         }
       }
+
       return dp[a.length][b.length];
     };
+
     const isSubstring = normalizedOriginal.includes(normalizedUser);
     if (isSubstring) {
       const substringAccuracy =
-        (normalizedUser.length / normalizedOriginal.length) * 100;
+        (normalizedUser.length / normalizedOriginal. length) * 100;
       return Math.round(substringAccuracy);
     }
+
     const distance = levenshteinDistance(normalizedOriginal, normalizedUser);
     const maxLength = Math.max(
       normalizedOriginal.length,
@@ -528,6 +624,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     );
     const similarity = 1 - distance / maxLength;
     const accuracy = similarity * 100;
+
     return Math.round(Math.max(0, accuracy));
   };
 
@@ -556,7 +653,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         @keyframes slideInFromBottom {
           from {
             opacity: 0;
-            transform:   translateY(20px);
+            transform:  translateY(20px);
           }
           to {
             opacity: 1;
@@ -564,19 +661,19 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           }
         }
         @keyframes fadeIn {
-          from { opacity:  0; }
+          from { opacity: 0; }
           to { opacity: 1; }
         }
         .hint-badge {
           animation: float 1s ease-in-out infinite;
         }
-        .listening-button {
+        . listening-button {
           animation: glow 2s ease-in-out infinite;
         }
         .result-card {
           animation: slideInFromBottom 0.5s ease-out;
         }
-        . fade-enter {
+        .fade-enter {
           animation: fadeIn 0.6s ease-out;
         }
       `}</style>
@@ -606,7 +703,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 </button>
                 <button
                   onClick={() => startPractice("drill")}
-                  className="flex-1 px-4 py-3 bg-blue-600 shadow-md rounded-xl transition-all text-xs font-black text-white flex flex-col items-center space-y-1 hover:bg-blue-700 hover:scale-105 active: scale-95"
+                  className="flex-1 px-4 py-3 bg-blue-600 shadow-md rounded-xl transition-all text-xs font-black text-white flex flex-col items-center space-y-1 hover:bg-blue-700 hover:scale-105 active:scale-95"
                 >
                   <i className="fas fa-shield-halved text-lg"></i>
                   <span>40x40</span>
@@ -650,13 +747,17 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                     ? "bg-red-50 border-red-300 text-red-700 shadow-sm listening-button"
                     : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:scale-105"
                 } ${
-                  ! canStartVoiceInput || isFinished ?  "opacity-50 cursor-not-allowed" : ""
+                  ! canStartVoiceInput || isFinished
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 } active:scale-95`}
                 aria-pressed={isListening}
                 aria-label="Toggle voice input"
               >
                 <i
-                  className={`fas fa-microphone ${isListening ?  "animate-pulse" : ""}`}
+                  className={`fas fa-microphone ${
+                    isListening ?  "animate-pulse" : ""
+                  }`}
                 ></i>
                 <span className="text-xs font-black uppercase tracking-wider">
                   {isListening ? "Listening..." : "Voice Input"}
@@ -689,7 +790,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           )}
 
           <Signalman
-            leftPos={currentSignal.left}
+            leftPos={currentSignal. left}
             rightPos={currentSignal.right}
             size={Math.min(window.innerWidth - 100, 360)}
           />
@@ -759,7 +860,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
               <div className="flex items-center space-x-2 mb-2">
                 <i className="fas fa-microphone text-red-600 animate-pulse"></i>
                 <span className="text-xs font-bold text-red-700">
-                  Voice Input Active
+                  Voice Input Active (Continuous Listening)
                 </span>
               </div>
               <div className="text-[10px] text-red-600 space-y-1">
@@ -788,7 +889,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           />
 
           <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-            {!isFinished && currentIndex < transmissionQueue.length - 1 && (
+            {! isFinished && currentIndex < transmissionQueue.length - 1 && (
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setIsPlaying(true)}
