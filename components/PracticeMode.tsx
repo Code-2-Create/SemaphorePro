@@ -14,23 +14,18 @@ interface PracticeModeProps {
   onSessionComplete: (session: TrainingSession) => void;
 }
 
-/* =========================
-   Reusable Voice Guide Modal
-========================= */
-
 interface VoiceGuideModalProps {
   open: boolean;
   onAccept: () => void;
 }
 
-const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
+const VoiceGuideModal: React. FC<VoiceGuideModalProps> = ({
   open,
   onAccept,
 }) => {
   const acceptButtonRef = useRef<HTMLButtonElement>(null);
   const [isClosing, setIsClosing] = useState(false);
 
-  // Auto-focus for accessibility
   useEffect(() => {
     if (open) {
       setTimeout(() => acceptButtonRef.current?.focus(), 100);
@@ -60,10 +55,10 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
     >
       <div
         className={`bg-white max-w-md w-full mx-4 p-6 rounded-3xl shadow-2xl border border-slate-200 transform transition-all duration-300 ${
-          isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"
+          isClosing ?  "scale-95 opacity-0" : "scale-100 opacity-100"
         }`}
         style={{
-          animation: !isClosing
+          animation: ! isClosing
             ? "slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"
             : "slideDown 0.3s ease-in",
         }}
@@ -115,7 +110,7 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
             <span className="text-blue-500 font-bold mt-0.5">•</span>
             <span>Speak clearly and slowly</span>
           </li>
-          <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
+          <li className="flex items-start gap-2 hover: text-slate-800 transition-colors">
             <span className="text-green-500 font-bold mt-0.5">•</span>
             <span>Avoid background noise</span>
           </li>
@@ -127,7 +122,7 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
             <span className="text-purple-500 font-bold mt-0.5">•</span>
             <span>NATO phonetics supported (ALPHA, BRAVO…)</span>
           </li>
-          <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
+          <li className="flex items-start gap-2 hover: text-slate-800 transition-colors">
             <span className="text-red-500 font-bold mt-0.5">•</span>
             <span>Pause briefly between words</span>
           </li>
@@ -154,7 +149,7 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
                 <span className="text-blue-600 font-bold">KK</span> → )
               </div>
               <div>
-                <span className="text-blue-600 font-bold">AAA</span> → .
+                <span className="text-blue-600 font-bold">AAA</span> → . 
               </div>
               <div>
                 <span className="text-blue-600 font-bold">MIM</span> → ,
@@ -182,10 +177,6 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
   );
 };
 
-/* =========================
-    Practice Mode Component
-========================= */
-
 const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const [phrase, setPhrase] = useState("");
   const [transmissionQueue, setTransmissionQueue] = useState<string[]>([]);
@@ -201,8 +192,8 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
+  const listeningRef = useRef(false);
 
-  // Check speech recognition support and setup
   useEffect(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -211,40 +202,41 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     if (SpeechRecognition) {
       setSpeechSupported(true);
       const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = false;
+      recognition. continuous = true;
+      recognition. interimResults = false;
       recognition.lang = "en-US";
+      recognition.maxAlternatives = 1;
 
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event:  any) => {
         const transcript = event.results[event.results.length - 1][0].transcript
           .trim()
           .toUpperCase();
-        console.log("Speech heard:", transcript); // Debug log
         handleSpeechResult(transcript);
       };
 
       recognition.onerror = (event: any) => {
-        console.error("Speech recognition error:", event.error);
-        if (event.error === "no-speech" || event.error === "aborted") {
-          // Automatically restart if it stops
-          if (isListening) {
+        if (
+          listeningRef.current &&
+          (event.error === "no-speech" ||
+            event.error === "audio-capture" ||
+            event.error === "network" ||
+            event.error === "aborted")
+        ) {
+          setTimeout(() => {
             try {
               recognition.start();
-            } catch (e) {
-              // Already started
-            }
-          }
+            } catch (e) {}
+          }, 500);
         }
       };
 
-      recognition.onend = () => {
-        // Restart if still in listening mode
-        if (isListening) {
-          try {
-            recognition.start();
-          } catch (e) {
-            // Already started
-          }
+      recognition. onend = () => {
+        if (listeningRef.current) {
+          setTimeout(() => {
+            try {
+              recognition.start();
+            } catch (e) {}
+          }, 500);
         }
       };
 
@@ -252,46 +244,36 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     }
 
     return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
+      listeningRef.current = false;
+      if (recognitionRef.current) recognitionRef.current.stop();
     };
-  }, [isListening]);
+  }, []);
 
-  // Handle speech recognition results
+  useEffect(() => {
+    if (isFinished && isListening) {
+      listeningRef.current = false;
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+  }, [isFinished, isListening]);
+
   const handleSpeechResult = (transcript: string) => {
-    // Check if user is spelling out letters (single letters separated by spaces)
     const words = transcript.split(" ");
-
     words.forEach((word) => {
       const upperWord = word.toUpperCase().trim();
-
-      // Skip empty words
       if (!upperWord) return;
-
-      if (upperWord === "NEXT") {
-        setUserInput((prev) => prev + " ");
-      } else if (upperWord === "NUM" || upperWord === "NUMBER") {
+      if (upperWord === "NEXT") setUserInput((prev) => prev + " ");
+      else if (upperWord === "NUM" || upperWord === "NUMBER")
         setUserInput((prev) => prev + "#");
-      } else if (upperWord === "KN") {
-        setUserInput((prev) => prev + "(");
-      } else if (upperWord === "KK") {
-        setUserInput((prev) => prev + ")");
-      } else if (upperWord === "AAA" || upperWord === "TRIPLE A") {
+      else if (upperWord === "KN") setUserInput((prev) => prev + "(");
+      else if (upperWord === "KK") setUserInput((prev) => prev + ")");
+      else if (upperWord === "AAA" || upperWord === "TRIPLE A")
         setUserInput((prev) => prev + ".");
-      } else if (upperWord === "MIM") {
-        setUserInput((prev) => prev + ",");
-      } else if (upperWord === "DU") {
-        setUserInput((prev) => prev + "-");
-      } else if (upperWord === "XE") {
-        setUserInput((prev) => prev + "/");
-      }
-      // Handle single letters (phonetic alphabet mapping)
-      else if (upperWord.length === 1 && /^[A-Z]$/.test(upperWord)) {
-        // Single letter - add it directly
+      else if (upperWord === "MIM") setUserInput((prev) => prev + ",");
+      else if (upperWord === "DU") setUserInput((prev) => prev + "-");
+      else if (upperWord === "XE") setUserInput((prev) => prev + "/");
+      else if (upperWord. length === 1 && /^[A-Z]$/.test(upperWord))
         setUserInput((prev) => prev + upperWord);
-      }
-      // Handle NATO phonetic alphabet
       else if (upperWord === "ALPHA") setUserInput((prev) => prev + "A");
       else if (upperWord === "BRAVO") setUserInput((prev) => prev + "B");
       else if (upperWord === "CHARLIE") setUserInput((prev) => prev + "C");
@@ -320,64 +302,47 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         setUserInput((prev) => prev + "X");
       else if (upperWord === "YANKEE") setUserInput((prev) => prev + "Y");
       else if (upperWord === "ZULU") setUserInput((prev) => prev + "Z");
-      else {
-        // Add the spoken word/phrase as-is
-        setUserInput((prev) => prev + upperWord);
-      }
+      else setUserInput((prev) => prev + upperWord);
     });
   };
 
-  // Toggle speech recognition with voice guide modal
+  const canStartVoiceInput =
+    phrase.length > 0 && transmissionQueue.length > 0 && !isFinished;
+
   const toggleSpeechRecognition = () => {
-    if (!speechSupported) return;
-
+    if (! speechSupported || !canStartVoiceInput) return;
     const hasSeenGuide = localStorage.getItem("voiceGuideSeen");
-
     if (isListening) {
-      recognitionRef.current?.stop();
+      listeningRef.current = false;
+      recognitionRef.current?. stop();
       setIsListening(false);
     } else {
-      if (!hasSeenGuide) {
+      if (! hasSeenGuide) {
         setShowVoiceGuide(true);
         return;
       }
-
+      listeningRef.current = true;
       try {
         recognitionRef.current?.start();
         setIsListening(true);
-      } catch (e) {
-        console.error("Failed to start recognition:", e);
-      }
+      } catch (e) {}
     }
   };
 
-  // Accept voice guide and start listening
   const acceptVoiceGuide = () => {
     localStorage.setItem("voiceGuideSeen", "true");
     setShowVoiceGuide(false);
-
+    listeningRef.current = true;
     try {
       recognitionRef.current?.start();
       setIsListening(true);
-    } catch (e) {
-      console.error("Failed to start recognition:", e);
-    }
+    } catch (e) {}
   };
 
-  // Stop speech recognition when finished
-  useEffect(() => {
-    if (isFinished && isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-    }
-  }, [isFinished, isListening]);
-
-  const getDelay = (level: number) => {
-    return Math.max(50, 2000 - level * 19);
-  };
+  const getDelay = (level: number) => Math.max(50, 2000 - level * 19);
 
   const generateExtensiveDrill = () => {
-    const words: string[] = [];
+    const words:  string[] = [];
     const nums: string[] = [];
     for (let i = 0; i < 40; i++) {
       words.push(SAMPLE_WORDS[Math.floor(Math.random() * SAMPLE_WORDS.length)]);
@@ -388,74 +353,53 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     return words.join(" ") + " " + nums.join("");
   };
 
-  const buildTransmissionQueue = (text?: string) => {
+  const buildTransmissionQueue = (text?:  string) => {
     if (!text) return [];
-
     const queue: string[] = [];
     let inNumberMode = false;
-
     for (let i = 0; i < text.length; i++) {
-      const char = text[i].toUpperCase();
-
-      // Handle special symbols first
+      const char = text[i]. toUpperCase();
       if (SYMBOL_TO_GROUP[char]) {
-        // Exit number mode if we were in it
         if (inNumberMode) {
           queue.push(" ");
-          queue.push("#"); // Close NUM
+          queue.push("#");
           inNumberMode = false;
         }
         const group = SYMBOL_TO_GROUP[char];
         for (const g of group) queue.push(g);
         continue;
       }
-
-      // Handle numbers:  NUM + words + NUM
       if (char >= "0" && char <= "9") {
-        // Start number mode if not already in it
         if (!inNumberMode) {
-          queue.push("#"); // NUM indicator to start
+          queue.push("#");
           queue.push(" ");
           inNumberMode = true;
         }
-        // Add the word for this digit
         const word = NUMBER_TO_WORD[char];
-        for (const letter of word) {
-          queue.push(letter);
-        }
-        // Add space between consecutive numbers
+        for (const letter of word) queue.push(letter);
         if (i + 1 < text.length && text[i + 1] >= "0" && text[i + 1] <= "9") {
           queue.push(" ");
         }
-      }
-      // Handle spaces
-      else if (char === " ") {
-        // Exit number mode if we were in it
+      } else if (char === " ") {
         if (inNumberMode) {
           queue.push(" ");
-          queue.push("#"); // Close NUM
+          queue.push("#");
           inNumberMode = false;
         }
         queue.push(" ");
-      }
-      // Handle letters
-      else if (char >= "A" && char <= "Z") {
-        // Exit number mode if we were in it
+      } else if (char >= "A" && char <= "Z") {
         if (inNumberMode) {
           queue.push(" ");
-          queue.push("#"); // Close NUM
+          queue.push("#");
           inNumberMode = false;
         }
-        queue.push(char);
+        queue. push(char);
       }
     }
-
-    // Close number mode if still open at end
     if (inNumberMode) {
       queue.push(" ");
       queue.push("#");
     }
-
     return queue;
   };
 
@@ -469,17 +413,11 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
 
   const decodeTransmission = (transmitted: string) => {
     let result = transmitted;
-
-    // First decode special groups
     result = decodeSpecialGroups(result);
-
-    // Now decode number words back to digits
-    // Pattern: find sequences like "NUM ZRO NUM" or "NUM ONE NUM"
     Object.entries(WORD_TO_NUMBER).forEach(([word, digit]) => {
       const pattern = new RegExp(`#${word}#`, "g");
       result = result.replace(pattern, digit);
     });
-
     return result;
   };
 
@@ -490,21 +428,25 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     } else {
       let pool = SAMPLE_NAVAL_PHRASES;
       if (type === "short") {
-        pool = SAMPLE_NAVAL_PHRASES.filter((p) => p.split(" ").length <= 5);
+        pool = SAMPLE_NAVAL_PHRASES. filter((p) => p.split(" ").length <= 5);
       } else if (type === "long") {
         pool = SAMPLE_NAVAL_PHRASES.filter((p) => p.split(" ").length > 5);
       }
       newPhrase =
-        pool[Math.floor(Math.random() * pool.length)] ||
-        SAMPLE_NAVAL_PHRASES[0];
+        pool[Math.floor(Math.random() * pool.length)] || SAMPLE_NAVAL_PHRASES[0];
     }
-
     const queue = buildTransmissionQueue(newPhrase);
     setPhrase(newPhrase);
     setTransmissionQueue(queue);
     setCurrentIndex(-1);
     setUserInput("");
     setIsFinished(false);
+    setIsPlaying(true);
+  };
+
+  // NEW:  Restart transmission from the beginning
+  const restartTransmission = () => {
+    setCurrentIndex(-1);
     setIsPlaying(true);
   };
 
@@ -529,45 +471,38 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
       setIsPlaying(false);
     }
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef. current) clearTimeout(timerRef.current);
     };
   }, [isPlaying, currentIndex, transmissionQueue, speedLevel, handleNextChar]);
 
   const handleSubmit = () => {
     const accuracy = calculateAccuracy(phrase, userInput);
-    const session: TrainingSession = {
+    const session:  TrainingSession = {
       id: Math.random().toString(36).substr(2, 9),
       date: Date.now(),
       accuracy,
       speedMs: getDelay(speedLevel),
       phrase,
-      userPhrase: userInput.toUpperCase(),
-      type: phrase.split(" ").length > 10 ? "Long" : "Short",
+      userPhrase: userInput. toUpperCase(),
+      type: phrase. split(" ").length > 10 ? "Long" : "Short",
     };
     onSessionComplete(session);
     setIsFinished(true);
   };
 
-  // Enhanced accuracy calculation - Uses Levenshtein distance & substring matching
   const calculateAccuracy = (original: string, user: string) => {
-    // Normalize both strings - decode special groups and remove all spaces
     const normalizedOriginal = decodeSpecialGroups(
       original.toUpperCase()
     ).replace(/\s+/g, "");
     const normalizedUser = user.toUpperCase().replace(/\s+/g, "");
-
-    if (normalizedOriginal.length === 0) return 100;
+    if (normalizedOriginal. length === 0) return 100;
     if (normalizedUser.length === 0) return 0;
-
-    // Calculate Levenshtein distance
     const levenshteinDistance = (a: string, b: string): number => {
-      const dp: number[][] = Array(a.length + 1)
+      const dp:  number[][] = Array(a.length + 1)
         .fill(null)
         .map(() => Array(b.length + 1).fill(0));
-
       for (let i = 0; i <= a.length; i++) dp[i][0] = i;
       for (let j = 0; j <= b.length; j++) dp[0][j] = j;
-
       for (let i = 1; i <= a.length; i++) {
         for (let j = 1; j <= b.length; j++) {
           if (a[i - 1] === b[j - 1]) {
@@ -578,20 +513,14 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           }
         }
       }
-
       return dp[a.length][b.length];
     };
-
-    // Check if user input is a substring of original (handles partial answers)
     const isSubstring = normalizedOriginal.includes(normalizedUser);
     if (isSubstring) {
-      // If user answer is a complete substring, calculate based on how much they got right
       const substringAccuracy =
         (normalizedUser.length / normalizedOriginal.length) * 100;
       return Math.round(substringAccuracy);
     }
-
-    // Calculate Levenshtein-based accuracy
     const distance = levenshteinDistance(normalizedOriginal, normalizedUser);
     const maxLength = Math.max(
       normalizedOriginal.length,
@@ -599,17 +528,14 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     );
     const similarity = 1 - distance / maxLength;
     const accuracy = similarity * 100;
-
     return Math.round(Math.max(0, accuracy));
   };
 
   const currentChar =
-    currentIndex >= 0 && currentIndex < transmissionQueue.length
+    currentIndex >= 0 && currentIndex < transmissionQueue. length
       ? transmissionQueue[currentIndex]
       : " ";
   const currentSignal = GET_CHAR_MAPPING(currentChar);
-
-  // Create display version of the transmission (what was actually transmitted)
   const transmittedText = transmissionQueue.join("").replace(/#/g, "NUM ");
 
   return (
@@ -630,7 +556,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         @keyframes slideInFromBottom {
           from {
             opacity: 0;
-            transform:  translateY(20px);
+            transform:   translateY(20px);
           }
           to {
             opacity: 1;
@@ -638,7 +564,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           }
         }
         @keyframes fadeIn {
-          from { opacity: 0; }
+          from { opacity:  0; }
           to { opacity: 1; }
         }
         .hint-badge {
@@ -650,21 +576,19 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         .result-card {
           animation: slideInFromBottom 0.5s ease-out;
         }
-        .fade-enter {
+        . fade-enter {
           animation: fadeIn 0.6s ease-out;
         }
       `}</style>
 
-      {/* Voice Guide Modal */}
       <VoiceGuideModal open={showVoiceGuide} onAccept={acceptVoiceGuide} />
 
       <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-slate-200 w-full flex flex-col items-center relative overflow-hidden">
-        {/* Dynamic Background Element */}
         <div className="absolute top-0 left-0 w-full h-1. 5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500"></div>
 
         <div className="flex flex-col w-full mb-6 space-y-4">
           <div className="flex justify-center bg-slate-100 p-1. 5 rounded-2xl border border-slate-200 shadow-sm">
-            {!isPlaying ? (
+            {! isPlaying ?  (
               <>
                 <button
                   onClick={() => startPractice("short")}
@@ -682,7 +606,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 </button>
                 <button
                   onClick={() => startPractice("drill")}
-                  className="flex-1 px-4 py-3 bg-blue-600 shadow-md rounded-xl transition-all text-xs font-black text-white flex flex-col items-center space-y-1 hover:bg-blue-700 hover:scale-105 active:scale-95"
+                  className="flex-1 px-4 py-3 bg-blue-600 shadow-md rounded-xl transition-all text-xs font-black text-white flex flex-col items-center space-y-1 hover:bg-blue-700 hover:scale-105 active: scale-95"
                 >
                   <i className="fas fa-shield-halved text-lg"></i>
                   <span>40x40</span>
@@ -713,28 +637,26 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
             >
               <i className={`fas ${showHints ? "fa-eye" : "fa-eye-slash"}`}></i>
               <span className="text-xs font-black uppercase tracking-wider">
-                {showHints ? "Hints ON" : "Hints OFF"}
+                {showHints ?  "Hints ON" : "Hints OFF"}
               </span>
             </button>
 
             {speechSupported && (
               <button
                 onClick={toggleSpeechRecognition}
-                disabled={isFinished}
+                disabled={! canStartVoiceInput || isFinished}
                 className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl border-2 transition-all ${
                   isListening
                     ? "bg-red-50 border-red-300 text-red-700 shadow-sm listening-button"
                     : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:scale-105"
                 } ${
-                  isFinished ? "opacity-50 cursor-not-allowed" : ""
+                  ! canStartVoiceInput || isFinished ?  "opacity-50 cursor-not-allowed" : ""
                 } active:scale-95`}
                 aria-pressed={isListening}
                 aria-label="Toggle voice input"
               >
                 <i
-                  className={`fas fa-microphone ${
-                    isListening ? "animate-pulse" : ""
-                  }`}
+                  className={`fas fa-microphone ${isListening ?  "animate-pulse" : ""}`}
                 ></i>
                 <span className="text-xs font-black uppercase tracking-wider">
                   {isListening ? "Listening..." : "Voice Input"}
@@ -753,17 +675,16 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 step="1"
                 value={speedLevel}
                 onChange={(e) => setSpeedLevel(parseInt(e.target.value))}
-                className="w-full sm:w-32 accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none transition-all hover:accent-blue-700"
+                className="w-full sm: w-32 accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none transition-all hover:accent-blue-700"
               />
             </div>
           </div>
         </div>
 
         <div className="relative flex flex-col items-center py-6">
-          {/* Real-time Hint Overlay */}
           {isPlaying && showHints && currentChar !== " " && (
             <div className="absolute -top-4 bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-white text-white w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-2xl z-20 hint-badge">
-              {currentChar === "#" ? "NUM" : currentChar}
+              {currentChar === "#" ?  "NUM" : currentChar}
             </div>
           )}
 
@@ -778,7 +699,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
               <span className="flex items-center space-x-2">
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    isPlaying ? "bg-green-500 animate-ping" : "bg-slate-300"
+                    isPlaying ?  "bg-green-500 animate-ping" : "bg-slate-300"
                   }`}
                 ></span>
                 <span>
@@ -811,7 +732,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         </div>
       </div>
 
-      {phrase && !isPlaying && (
+      {phrase && ! isPlaying && (
         <div className="w-full bg-white p-8 rounded-[2. 5rem] shadow-2xl border border-slate-100 fade-enter">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center space-x-3">
@@ -825,7 +746,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
                 className={`px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
                   calculateAccuracy(phrase, userInput) > 85
                     ? "bg-green-100 text-green-700 shadow-sm"
-                    : "bg-orange-100 text-orange-700 shadow-sm"
+                    :  "bg-orange-100 text-orange-700 shadow-sm"
                 }`}
               >
                 {calculateAccuracy(phrase, userInput)}% Accuracy
@@ -844,14 +765,14 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
               <div className="text-[10px] text-red-600 space-y-1">
                 <p>
                   <strong>Single Letters:</strong> Say letter name or NATO
-                  phonetic (A, B, C... or ALPHA, BRAVO, CHARLIE...)
+                  phonetic (A, B, C...  or ALPHA, BRAVO, CHARLIE...)
                 </p>
                 <p>
                   <strong>Words:</strong> Say full word (PILOT, ALERT, etc.)
                 </p>
                 <p>
                   <strong>Commands:</strong> NEXT=space | NUM=# | KN=( | KK=) |
-                  AAA=. | MIM=, | DU=- | XE=/
+                  AAA=.  | MIM=, | DU=- | XE=/
                 </p>
               </div>
             </div>
@@ -868,18 +789,26 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
 
           <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6">
             {!isFinished && currentIndex < transmissionQueue.length - 1 && (
-              <button
-                onClick={() => {
-                  setIsPlaying(true);
-                }}
-                className="group text-green-600 font-bold hover:text-green-700 transition-all flex items-center space-x-3 px-6 py-3 rounded-2xl hover:bg-green-50 active:scale-95 hover:scale-105"
-              >
-                <i className="fas fa-play"></i>
-                <span>Resume Transmission</span>
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => setIsPlaying(true)}
+                  className="group text-green-600 font-bold hover:text-green-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-green-50 active:scale-95 hover:scale-105"
+                >
+                  <i className="fas fa-play"></i>
+                  <span>Resume Transmission</span>
+                </button>
+                <button
+                  onClick={restartTransmission}
+                  className="group text-blue-600 font-bold hover: text-blue-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-blue-50 active:scale-95 hover:scale-105"
+                  title="Restart transmission from the beginning"
+                >
+                  <i className="fas fa-redo"></i>
+                  <span>Restart Transmission</span>
+                </button>
+              </div>
             )}
 
-            {!isFinished ? (
+            {!isFinished ?  (
               <button
                 onClick={handleSubmit}
                 className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:from-slate-800 hover:to-slate-700 transition-all shadow-xl hover:shadow-2xl active:scale-95 flex items-center justify-center space-x-3 hover:scale-105"
