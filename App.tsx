@@ -385,7 +385,7 @@ const App: React.FC = () => {
           </div>
           <div className="space-y-1">
             <p className="text-xs text-slate-600 font-bold">
-              Developed by Vinayak Sen & Vedika Dixit, NCC NAVAL WING LNCT
+              Developed by Vinayak Sen, NCC NAVAL WING LNCT
             </p>
             <p className="text-[10px] text-slate-400 font-medium">
               1 MP Naval Unit Bhopal • Version 2.0 • 2025
