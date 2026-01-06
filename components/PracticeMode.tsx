@@ -336,122 +336,122 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   }, []);
 
   const processTranscript = (text: string) => {
-  let result = text.toUpperCase().trim();
+    let result = text.toUpperCase().trim();
 
-  // Special symbol mapping
-  const symbolMap: Record<string, string> = {
-    KN: "(",
-    KK: ")",
-    AAA: ".",
-    "TRIPLE A": ".",
-    MIM: ",",
-    DU: "-",
-    XE: "/",
-  };
+    // Special symbol mapping
+    const symbolMap: Record<string, string> = {
+      KN: "(",
+      KK: ")",
+      AAA: ".",
+      "TRIPLE A": ".",
+      MIM: ",",
+      DU: "-",
+      XE: "/",
+    };
 
-  // Phonetic letter corrections (common speech-to-text misinterpretations)
-  const phoneticMap: Record<string, string> = {
-    YOU: "U",
-    ARE: "R",
-    SEE: "C",
-    BE: "B",
-    WHY: "Y",
-    EYE: "I",
-    OH: "O",
-    OKAY: "K",
-    KAY: "K",
-    JAY: "J",
-    AYE: "I",
-    TEA: "T",
-    PEA: "P",
-    QUEUE: "Q",
-    EX: "X",
-  };
+    // Phonetic letter corrections (common speech-to-text misinterpretations)
+    const phoneticMap: Record<string, string> = {
+      YOU: "U",
+      ARE: "R",
+      SEE: "C",
+      BE: "B",
+      WHY: "Y",
+      EYE: "I",
+      OH: "O",
+      OKAY: "K",
+      KAY: "K",
+      JAY: "J",
+      AYE: "I",
+      TEA: "T",
+      PEA: "P",
+      QUEUE: "Q",
+      EX: "X",
+    };
 
-  // Number word mapping (for spoken numbers)
-  const numberWordMap: Record<string, string> = {
-    ZERO: "0",
-    ONE: "1",
-    TWO: "2",
-    THREE: "3",
-    FOUR: "4",
-    FOR: "4",
-    FIVE: "5",
-    SIX: "6",
-    SEVEN: "7",
-    SVN: "7",
-    EIGHT: "8",
-    ATE: "8",
-    NINE: "9",
-  };
+    // Number word mapping (for spoken numbers)
+    const numberWordMap: Record<string, string> = {
+      ZERO: "0",
+      ONE: "1",
+      TWO: "2",
+      THREE: "3",
+      FOUR: "4",
+      FOR: "4",
+      FIVE: "5",
+      SIX: "6",
+      SEVEN: "7",
+      SVN: "7",
+      EIGHT: "8",
+      ATE: "8",
+      NINE: "9",
+    };
 
-  const words = result.split(/\s+/);
-  let processed = "";
-  let i = 0;
-  let inNumberMode = false;
+    const words = result.split(/\s+/);
+    let processed = "";
+    let i = 0;
+    let inNumberMode = false;
 
-  while (i < words.length) {
-    const word = words[i];
+    while (i < words.length) {
+      const word = words[i];
 
-    // Check for NUM indicator
-    if (word === "NUM" || word === "NUMBER") {
-      if (inNumberMode) {
-        // Closing NUM - exit number mode
-        inNumberMode = false;
-      } else {
-        // Opening NUM - enter number mode
-        inNumberMode = true;
+      // Check for NUM indicator
+      if (word === "NUM" || word === "NUMBER") {
+        if (inNumberMode) {
+          // Closing NUM - exit number mode
+          inNumberMode = false;
+        } else {
+          // Opening NUM - enter number mode
+          inNumberMode = true;
+        }
+        i++;
+        continue;
+      }
+
+      // If in number mode, try to convert word to digit
+      if (inNumberMode && numberWordMap[word]) {
+        processed += numberWordMap[word];
+        i++;
+        continue;
+      }
+
+      // Check for phonetic corrections
+      if (phoneticMap[word]) {
+        processed += phoneticMap[word];
+        i++;
+        continue;
+      }
+
+      // Check for special symbols
+      if (symbolMap[word]) {
+        processed += symbolMap[word];
+        i++;
+        continue;
+      }
+
+      // Check for space commands
+      if (word === "NEXT" || word === "SPACE") {
+        processed += " ";
+        i++;
+        continue;
+      }
+
+      // Single letter
+      if (word.length === 1 && /[A-Z]/.test(word)) {
+        processed += word;
+        i++;
+        continue;
+      }
+
+      // Multi-letter word - extract individual letters
+      for (const char of word) {
+        if (/[A-Z]/.test(char)) {
+          processed += char;
+        }
       }
       i++;
-      continue;
     }
 
-    // If in number mode, try to convert word to digit
-    if (inNumberMode && numberWordMap[word]) {
-      processed += numberWordMap[word];
-      i++;
-      continue;
-    }
-
-    // Check for phonetic corrections
-    if (phoneticMap[word]) {
-      processed += phoneticMap[word];
-      i++;
-      continue;
-    }
-
-    // Check for special symbols
-    if (symbolMap[word]) {
-      processed += symbolMap[word];
-      i++;
-      continue;
-    }
-
-    // Check for space commands
-    if (word === "NEXT" || word === "SPACE") {
-      processed += " ";
-      i++;
-      continue;
-    }
-
-    // Single letter
-    if (word.length === 1 && /[A-Z]/.test(word)) {
-      processed += word;
-      i++;
-      continue;
-    }
-
-    // Multi-letter word - extract individual letters
-    for (const char of word) {
-      if (/[A-Z]/.test(char)) {
-        processed += char;
-      }
-    }
-    i++;
-  }
-
-  return processed;
-};
+    return processed;
+  };
 
   const startRecording = () => {
     if (!recognitionRef.current) {
@@ -662,6 +662,39 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     };
   }, [isPlaying, currentIndex, transmissionQueue, speedLevel, handleNextChar]);
 
+  // 🔴 STEP 2: Trigger a single blink EXACTLY when a new character starts
+  useEffect(() => {
+    // Guard: only blink during active transmission
+    if (
+      !isPlaying ||
+      currentIndex < 0 ||
+      currentIndex >= transmissionQueue.length
+    ) {
+      return;
+    }
+
+    const char = transmissionQueue[currentIndex];
+
+    // Ignore gaps between characters
+    if (char === " ") return;
+
+    // Prevent double blink for same character index
+    if (lastBlinkIndexRef.current === currentIndex) return;
+
+    // Fire blink
+    lastBlinkIndexRef.current = currentIndex;
+    setBlinkOn(true);
+
+    // Blink duration adapts to speed
+    const blinkDuration = Math.min(180, getDelay(speedLevel) * 0.35);
+
+    const timeout = setTimeout(() => {
+      setBlinkOn(false);
+    }, blinkDuration);
+
+    return () => clearTimeout(timeout);
+  }, [currentIndex, isPlaying, transmissionQueue, speedLevel]);
+
   const handleSubmit = () => {
     const accuracy = calculateAccuracy(phrase, userInput);
     const session: TrainingSession = {
@@ -730,6 +763,20 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
     currentIndex >= 0 && currentIndex < transmissionQueue.length
       ? transmissionQueue[currentIndex]
       : " ";
+
+  // Blink state for transmission pulse (EVENT-based, not continuous)
+  const [blinkOn, setBlinkOn] = useState(false);
+
+  // Track last index that triggered a blink
+  const lastBlinkIndexRef = useRef<number>(-1);
+
+  // TRUE only when a real semaphore character is being transmitted
+  // Spaces represent gaps between symbols and should NOT trigger blinking
+  const isTransmittingChar =
+    isPlaying &&
+    currentIndex >= 0 &&
+    currentIndex < transmissionQueue.length &&
+    transmissionQueue[currentIndex] !== " ";
   const currentSignal = GET_CHAR_MAPPING(currentChar);
   const transmittedText = transmissionQueue.join("").replace(/#/g, "NUM ");
 
@@ -904,13 +951,25 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
             <div className="flex justify-between w-full text-[9px] uppercase font-black text-slate-500 tracking-wider mb-2">
               <span className="flex items-center space-x-2">
                 <span
-                  className={`w-2 h-2 rounded-full ${
-                    isPlaying ? "bg-green-500 animate-ping" : "bg-slate-300"
+                  className={`w-2 h-2 rounded-full transition-all duration-100 ${
+                    blinkOn
+                      ? "bg-red-500 scale-150"
+                      : isPlaying
+                      ? "bg-green-500"
+                      : "bg-slate-300"
                   }`}
+                  style={{
+                    boxShadow: blinkOn
+                      ? "0 0 12px rgba(239, 68, 68, 0.9)"
+                      : "none",
+                  }}
                 ></span>
+
                 <span>
-                  {isPlaying
+                  {isTransmittingChar
                     ? "Transmitting..."
+                    : isPlaying
+                    ? "Waiting"
                     : transmissionQueue.length > 0
                     ? "Ready"
                     : "READY"}
@@ -937,6 +996,34 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
           </div>
         </div>
       </div>
+
+      {phrase && !isPlaying && currentIndex < transmissionQueue.length - 1 && (
+        <div className="w-full bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 fade-enter">
+          <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center space-x-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-200 transition-colors">
+              <i className="fas fa-satellite-dish text-blue-600"></i>
+            </div>
+            <span className="text-xl">Transmission Controls</span>
+          </h3>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <button
+              onClick={() => setIsPlaying(true)}
+              className="group text-green-600 font-bold hover:text-green-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-green-50 active:scale-95 hover:scale-105 border-2 border-green-200"
+            >
+              <i className="fas fa-play"></i>
+              <span>Resume Transmission</span>
+            </button>
+            <button
+              onClick={restartTransmission}
+              className="group text-blue-600 font-bold hover:text-blue-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-blue-50 active:scale-95 hover:scale-105 border-2 border-blue-200"
+              title="Restart transmission from the beginning"
+            >
+              <i className="fas fa-redo"></i>
+              <span>Restart Transmission</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {phrase && !isPlaying && (
         <div className="w-full bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 fade-enter">
@@ -1004,27 +1091,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
             disabled={isFinished}
           />
 
-          <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6">
-            {!isFinished && currentIndex < transmissionQueue.length - 1 && (
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                <button
-                  onClick={() => setIsPlaying(true)}
-                  className="group text-green-600 font-bold hover:text-green-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-green-50 active:scale-95 hover:scale-105"
-                >
-                  <i className="fas fa-play"></i>
-                  <span>Resume Transmission</span>
-                </button>
-                <button
-                  onClick={restartTransmission}
-                  className="group text-blue-600 font-bold hover:text-blue-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-blue-50 active:scale-95 hover:scale-105"
-                  title="Restart transmission from the beginning"
-                >
-                  <i className="fas fa-redo"></i>
-                  <span>Restart Transmission</span>
-                </button>
-              </div>
-            )}
-
+          <div className="mt-8 flex flex-col md:flex-row justify-end items-center gap-6">
             {!isFinished ? (
               <button
                 onClick={handleSubmit}

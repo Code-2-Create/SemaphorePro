@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import torsoImage from './torso.png';
@@ -14,13 +14,15 @@ interface SignalmanProps {
   className?: string;
   animate?: boolean;
   torsoImageUrl?: string;
+  elasticity?: number; // 0.0 to 1.0, where 0 = stiff, 1 = very elastic
+  transitionDuration?: number; // Duration in milliseconds
 }
 
 /* -------------------- 3D FLAG CONFIG -------------------- */
-const CLOTH_X = 12;
-const CLOTH_Y = 16;
+const CLOTH_X = 17;
+const CLOTH_Y = 17;
 const SEG = 0.0125;
-const GRAVITY = new THREE.Vector3(0, -25, 0);
+const GRAVITY = new THREE.Vector3(0, -30, 0);
 const POLE_START = 0.55;
 const POLE_END = 0.8;
 
@@ -30,10 +32,15 @@ const PhysicsFlag: React.FC<{
   side: 'left' | 'right';
   animate: boolean;
   svgSize: number;
-}> = ({ angle, side, animate, svgSize }) => {
+  elasticity: number;
+}> = ({ angle, side, animate, svgSize, elasticity }) => {
   const meshRef = useRef<THREE.Mesh>(null!);
   const angleRef = useRef(angle);
   const prevAngleRef = useRef(angle);
+
+  // Elasticity affects damping and constraint stiffness
+  const damping = 0.98 - (elasticity * 0.15); // More elastic = less damping (0.98 to 0.83)
+  const constraintStiffness = 0.65 + (elasticity * 0.15); // More elastic = looser constraints
 
   const particles = useMemo(() => {
     const arr: any[] = [];
@@ -74,45 +81,15 @@ const PhysicsFlag: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (!animate) {
-      angleRef.current = angle;
-      return;
-    }
-
-    const startAngle = angleRef.current;
-    const targetAngle = angle;
-    const startTime = performance.now();
-    const duration = 300;
-    
-    let rafId: number;
-
-    const animateAngle = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easeProgress = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-      
-      angleRef.current = startAngle + (targetAngle - startAngle) * easeProgress;
-      
-      if (progress < 1) {
-        rafId = requestAnimationFrame(animateAngle);
-      }
-    };
-
-    rafId = requestAnimationFrame(animateAngle);
-    
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-    };
-  }, [angle, animate]);
+    // Immediately update angle without animation - sync with SVG
+    angleRef.current = angle;
+  }, [angle]);
 
   const constrain = (p1: any, p2: any, d: number) => {
     const diff = new THREE.Vector3().subVectors(p2.pos, p1.pos);
     const len = diff.length();
     if (len === 0) return;
-    const corr = diff.multiplyScalar((1 - d / len) * 0.5);
+    const corr = diff.multiplyScalar((1 - d / len) * constraintStiffness);
     if (!p1.pinned) p1.pos.add(corr);
     if (!p2.pinned) p2.pos.sub(corr);
   };
@@ -146,14 +123,16 @@ const PhysicsFlag: React.FC<{
 
       if (!animate) return;
 
-      const vel = p.pos.clone().sub(p.old).multiplyScalar(0.98);
+      // Verlet integration with elasticity-based damping
+      const vel = p.pos.clone().sub(p.old).multiplyScalar(damping);
       p.old.copy(p.pos);
       p.pos.add(vel);
       
       p.pos.y += GRAVITY.y * clampedDt * clampedDt;
 
-      if (angleChange > 5) {
-        const swingForce = angleChange * 0.0001;
+      // Enhanced swing motion based on angle changes and elasticity
+      if (angleChange > 2) {
+        const swingForce = angleChange * 0.0001 * (1 + elasticity * 0.5);
         const xMultiplier = side === 'right' ? 1 : -1;
         p.pos.x += Math.cos(rad + Math.PI / 2) * swingForce * xMultiplier;
         p.pos.y += Math.sin(rad + Math.PI / 2) * swingForce;
@@ -170,7 +149,8 @@ const PhysicsFlag: React.FC<{
       p.pos.z = 0;
     });
 
-    const iterations = animate ? 8 : 1;
+    // More iterations for more elastic flags to maintain shape
+    const iterations = animate ? Math.ceil(15 + elasticity * 4) : 1;
     for (let k = 0; k < iterations; k++) {
       for (let y = 0; y < CLOTH_Y; y++) {
         for (let x = 0; x < CLOTH_X; x++) {
@@ -240,8 +220,13 @@ const Signalman: React.FC<SignalmanProps> = ({
   size = 300, 
   className = "",
   animate = true,
-  torsoImageUrl
+  torsoImageUrl,
+  elasticity = 0.3, // Default medium elasticity
+  transitionDuration = 300 // Default 300ms to match original
 }) => {
+  const [currentLeftAngle, setCurrentLeftAngle] = useState(0);
+  const [currentRightAngle, setCurrentRightAngle] = useState(0);
+  
   const getSVGAngle = (pos: SemaphorePosition) => {
     return pos * 45 - 180;
   };
@@ -259,6 +244,44 @@ const Signalman: React.FC<SignalmanProps> = ({
   const leftFlagAngle = get3DFlagAngle(leftPos, leftAngleDeg);
   const rightFlagAngle = get3DFlagAngle(rightPos, rightAngleDeg);
 
+  // Smooth angle animation synchronized with SVG
+  useEffect(() => {
+    if (!animate) {
+      setCurrentLeftAngle(leftFlagAngle);
+      setCurrentRightAngle(rightFlagAngle);
+      return;
+    }
+
+    const startLeftAngle = currentLeftAngle;
+    const startRightAngle = currentRightAngle;
+    const startTime = performance.now();
+    
+    let rafId: number;
+
+    const animateAngles = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / transitionDuration, 1);
+      
+      // Ease-in-out for smooth acceleration/deceleration
+      const easeProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      setCurrentLeftAngle(startLeftAngle + (leftFlagAngle - startLeftAngle) * easeProgress);
+      setCurrentRightAngle(startRightAngle + (rightFlagAngle - startRightAngle) * easeProgress);
+      
+      if (progress < 1) {
+        rafId = requestAnimationFrame(animateAngles);
+      }
+    };
+
+    rafId = requestAnimationFrame(animateAngles);
+    
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [leftFlagAngle, rightFlagAngle, animate, transitionDuration]);
+
   return (
     <div className={`flex justify-center items-center ${className}`} style={{ width: size, height: size, position: 'relative' }}>
       {/* Use imported torso image or custom torsoImageUrl */}
@@ -275,7 +298,6 @@ const Signalman: React.FC<SignalmanProps> = ({
           zIndex: 1 
         }}
         onError={(e) => {
-          // If image fails to load, show SVG fallback
           e.currentTarget.style.display = 'none';
           const svg = e.currentTarget.nextElementSibling as HTMLElement;
           if (svg) svg.style.display = 'block';
@@ -297,12 +319,12 @@ const Signalman: React.FC<SignalmanProps> = ({
         
         <line x1="100" y1="90" x2="100" y2="150" stroke="white" strokeWidth="1" strokeDasharray="2,2" />
         
-        <g style={{ transform: `rotate(${leftSVGAngle}deg)`, transformOrigin: '100px 100px' }} className={animate ? "transition-all duration-300 ease-in-out" : ""}>
+        <g style={{ transform: `rotate(${leftSVGAngle}deg)`, transformOrigin: '100px 100px', transition: animate ? `transform ${transitionDuration}ms ease-in-out` : 'none' }}>
           <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
           <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
         </g>
         
-        <g style={{ transform: `rotate(${rightSVGAngle}deg)`, transformOrigin: '100px 100px' }} className={animate ? "transition-all duration-300 ease-in-out" : ""}>
+        <g style={{ transform: `rotate(${rightSVGAngle}deg)`, transformOrigin: '100px 100px', transition: animate ? `transform ${transitionDuration}ms ease-in-out` : 'none' }}>
           <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
           <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
         </g>
@@ -316,12 +338,12 @@ const Signalman: React.FC<SignalmanProps> = ({
         className="drop-shadow-lg"
         style={{ position: 'absolute', top: 0, left: 0, zIndex: 3 }}
       >
-        <g style={{ transform: `rotate(${leftSVGAngle}deg)`, transformOrigin: '100px 100px' }} className={animate ? "transition-all duration-300 ease-in-out" : ""}>
+        <g style={{ transform: `rotate(${leftSVGAngle}deg)`, transformOrigin: '100px 100px', transition: animate ? `transform ${transitionDuration}ms ease-in-out` : 'none' }}>
           <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
           <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
         </g>
         
-        <g style={{ transform: `rotate(${rightSVGAngle}deg)`, transformOrigin: '100px 100px' }} className={animate ? "transition-all duration-300 ease-in-out" : ""}>
+        <g style={{ transform: `rotate(${rightSVGAngle}deg)`, transformOrigin: '100px 100px', transition: animate ? `transform ${transitionDuration}ms ease-in-out` : 'none' }}>
           <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
           <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
         </g>
@@ -339,8 +361,8 @@ const Signalman: React.FC<SignalmanProps> = ({
           <directionalLight position={[-5, 5, -5]} intensity={2} />
           <pointLight position={[0, 0, 2]} intensity={2.0} />
           
-          <PhysicsFlag angle={leftFlagAngle} side="left" animate={animate} svgSize={size} />
-          <PhysicsFlag angle={rightFlagAngle} side="right" animate={animate} svgSize={size} />
+          <PhysicsFlag angle={currentLeftAngle} side="left" animate={animate} svgSize={size} elasticity={elasticity} />
+          <PhysicsFlag angle={currentRightAngle} side="right" animate={animate} svgSize={size} elasticity={elasticity} />
         </Canvas>
       </div>
     </div>
