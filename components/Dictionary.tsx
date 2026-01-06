@@ -361,7 +361,7 @@ const Dictionary: React.FC = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
-            { letter: "A", word: "Alpha" },
+            { letter: "A", word: "Alfa" },
             { letter: "B", word: "Bravo" },
             { letter: "C", word: "Charlie" },
             { letter: "D", word: "Delta" },
@@ -370,7 +370,7 @@ const Dictionary: React.FC = () => {
             { letter: "G", word: "Golf" },
             { letter: "H", word: "Hotel" },
             { letter: "I", word: "India" },
-            { letter: "J", word: "Juliet" },
+            { letter: "J", word: "Juliett" },
             { letter: "K", word: "Kilo" },
             { letter: "L", word: "Lima" },
             { letter: "M", word: "Mike" },
