@@ -3,6 +3,7 @@ import Signalman from "./Signalman";
 import { SEMAPHORE_MAP } from "../constants";
 import { SPECIAL_SYMBOL_DICTIONARY, NUMBER_TO_WORD } from "../constants";
 import tricksImage from "./tricks.svg";
+import { SemaphorePosition } from "../types";
 
 const Dictionary: React.FC = () => {
   const [selectedChar, setSelectedChar] = useState<string | null>(null);
@@ -82,8 +83,8 @@ const Dictionary: React.FC = () => {
 
   const getEntryDisplay = (entry: (typeof allEntries)[0]) => {
     if (entry.type === "letter") return entry.char;
-    if (entry.type === "number") return entry.char;
-    if (entry.type === "symbol") return entry.char;
+    if (entry.type === "number") return entry.word; // ZRO, ONE, TWO, ...
+    if (entry.type === "symbol") return entry.group;
     if (entry.type === "indicator") return "NUM";
     return "SPC";
   };
@@ -141,13 +142,53 @@ const Dictionary: React.FC = () => {
                   entry.type === "rest") && (
                   <div className="w-12 h-12 flex items-center justify-center mb-1">
                     <svg viewBox="0 0 200 200" width="48" height="48">
-                      <g style={{ transform: `rotate(${entry.left! * 45 - 180}deg)`, transformOrigin: '100px 100px' }}>
-                        <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
-                        <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
+                      <g
+                        style={{
+                          transform: `rotate(${entry.left! * 45 - 180}deg)`,
+                          transformOrigin: "100px 100px",
+                        }}
+                      >
+                        <line
+                          x1="100"
+                          y1="100"
+                          x2="100"
+                          y2="40"
+                          stroke="#334155"
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                        />
+                        <line
+                          x1="100"
+                          y1="40"
+                          x2="100"
+                          y2="10"
+                          stroke="#475569"
+                          strokeWidth="3"
+                        />
                       </g>
-                      <g style={{ transform: `rotate(${entry.right! * 45 - 180}deg)`, transformOrigin: '100px 100px' }}>
-                        <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
-                        <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
+                      <g
+                        style={{
+                          transform: `rotate(${entry.right! * 45 - 180}deg)`,
+                          transformOrigin: "100px 100px",
+                        }}
+                      >
+                        <line
+                          x1="100"
+                          y1="100"
+                          x2="100"
+                          y2="40"
+                          stroke="#334155"
+                          strokeWidth="6"
+                          strokeLinecap="round"
+                        />
+                        <line
+                          x1="100"
+                          y1="40"
+                          x2="100"
+                          y2="10"
+                          stroke="#475569"
+                          strokeWidth="3"
+                        />
                       </g>
                       <circle cx="100" cy="100" r="8" fill="#1e293b" />
                     </svg>
@@ -199,20 +240,22 @@ const Dictionary: React.FC = () => {
 
               <h3 className="text-2xl font-black mb-2">
                 {selectedEntry.type === "letter" && `${selectedEntry.char}`}
-                {selectedEntry.type === "number" && `${selectedEntry.char}`}
-                {selectedEntry.type === "symbol" && selectedEntry.name}
                 {selectedEntry.type === "indicator" && "NUM"}
                 {selectedEntry.type === "rest" && "REST"}
+                {selectedEntry.type === "number" && `${selectedEntry.char}`}
+                {selectedEntry.type === "symbol" && selectedEntry.name}
+                
               </h3>
 
               <p className="text-xs text-slate-400 mb-5">
                 {selectedEntry.type === "letter" && "Letter Signal"}
+                {selectedEntry.type === "indicator" && "Number Marker"}
+                {selectedEntry.type === "rest" && "Space / Rest"}
                 {selectedEntry.type === "number" &&
                   `Transmitted as: ${selectedEntry.word}`}
                 {selectedEntry.type === "symbol" &&
                   `Signal: ${selectedEntry.group}`}
-                {selectedEntry.type === "indicator" && "Number Marker"}
-                {selectedEntry.type === "rest" && "Space / Rest"}
+                
               </p>
 
               {(selectedEntry.type === "letter" ||
@@ -221,8 +264,8 @@ const Dictionary: React.FC = () => {
                 <>
                   <div className="bg-white rounded-2xl p-8 mb-6 shadow-lg w-full flex items-center justify-center overflow-hidden min-h-[220px]">
                     <Signalman
-                      leftPos={selectedEntry.left!}
-                      rightPos={selectedEntry.right!}
+                      leftPos={selectedEntry.left as SemaphorePosition}
+                      rightPos={selectedEntry.right as SemaphorePosition}
                       size={Math.min(window.innerWidth - 150, 220)}
                     />
                   </div>
@@ -402,7 +445,6 @@ const Dictionary: React.FC = () => {
           ))}
         </div>
       </div>
-      
     </div>
   );
 };
