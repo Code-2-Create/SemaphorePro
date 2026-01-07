@@ -117,10 +117,10 @@ const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
             <div className="text-sm text-blue-900">
               <p className="font-bold mb-1">Optimized for Mobile</p>
               <ul className="space-y-1 text-xs">
-                <li>✅ Minimizes beeping on mobile devices</li>
+                <li>✅ Try to speak fast for Minimizing beeps.</li>
                 <li>✅ Tap to start, tap to stop</li>
-                <li>✅ Free - no API key needed</li>
-                <li>✅ Works on Android & iOS</li>
+                <li>✅ Voice input works best at 60-80% speed.</li>
+                <li>✅ Works on Desktop, Android & iOS</li>
               </ul>
             </div>
           </div>
