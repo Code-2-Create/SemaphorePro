@@ -147,7 +147,10 @@ const Dictionary: React.FC = () => {
       clearInterval(animationTimerRef.current);
     }
 
-    if (selectedEntry && (selectedEntry.type === "number" || selectedEntry.type === "symbol")) {
+    if (
+      selectedEntry &&
+      (selectedEntry.type === "number" || selectedEntry.type === "symbol")
+    ) {
       const sequence = getAnimationSequence(selectedEntry);
       if (sequence) {
         setAnimationIndex(0);
@@ -184,7 +187,8 @@ const Dictionary: React.FC = () => {
     if (!selectedEntry || !isAnimating) return { left: 0, right: 0 };
 
     const sequence = getAnimationSequence(selectedEntry);
-    if (!sequence || animationIndex >= sequence.length) return { left: 0, right: 0 };
+    if (!sequence || animationIndex >= sequence.length)
+      return { left: 0, right: 0 };
 
     const currentChar = sequence[animationIndex];
     const mapping = GET_CHAR_MAPPING(currentChar);
@@ -384,16 +388,20 @@ const Dictionary: React.FC = () => {
 
               {selectedEntry.type === "number" && (
                 <div className="w-full space-y-3">
-                  <div className="bg-white rounded-2xl p-6 mb-3 shadow-lg w-full flex flex-col items-center justify-center overflow-hidden min-h-[220px]">
-                    <Signalman
-                      leftPos={currentAnimationPos.left as SemaphorePosition}
-                      rightPos={currentAnimationPos.right as SemaphorePosition}
-                      size={Math.min(window.innerWidth - 150, 200)}
-                    />
-                    <div className="mt-3 text-slate-700 font-mono text-sm font-bold">
-                      {isAnimating && getAnimationSequence(selectedEntry)[animationIndex]}
-                    </div>
-                  </div>
+                  <div className="bg-white rounded-2xl p-6 mb-3 shadow-lg w-full flex flex-col items-center min-h-[340px]">
+  <div className="relative">
+    <Signalman
+      leftPos={currentAnimationPos.left as SemaphorePosition}
+      rightPos={currentAnimationPos.right as SemaphorePosition}
+      size={Math.min(window.innerWidth - 150, 220)}
+    />
+  </div>
+
+  <div className="mt-10 z-10 text-slate-700 font-mono text-lg font-black">
+    {isAnimating && getAnimationSequence(selectedEntry)[animationIndex]}
+  </div>
+</div>
+
 
                   <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
                     <span className="block text-slate-500 font-bold uppercase text-[9px] mb-2">
@@ -421,16 +429,19 @@ const Dictionary: React.FC = () => {
 
               {selectedEntry.type === "symbol" && (
                 <div className="w-full space-y-3">
-                  <div className="bg-white rounded-2xl p-6 mb-3 shadow-lg w-full flex flex-col items-center justify-center overflow-hidden min-h-[220px]">
-                    <Signalman
-                      leftPos={currentAnimationPos.left as SemaphorePosition}
-                      rightPos={currentAnimationPos.right as SemaphorePosition}
-                      size={Math.min(window.innerWidth - 150, 200)}
-                    />
-                    <div className="mt-3 text-slate-700 font-mono text-sm font-bold">
-                      {isAnimating && getAnimationSequence(selectedEntry)[animationIndex]}
-                    </div>
-                  </div>
+                  <div className="bg-white rounded-2xl p-6 mb-3 shadow-lg w-full flex flex-col items-center min-h-[360px]">
+  <div className="relative">
+    <Signalman
+      leftPos={currentAnimationPos.left as SemaphorePosition}
+      rightPos={currentAnimationPos.right as SemaphorePosition}
+      size={Math.min(window.innerWidth - 150, 200)}
+    />
+  </div>
+
+  <div className="mt-12 z-10 text-slate-700 font-mono text-lg font-black">
+    {isAnimating && getAnimationSequence(selectedEntry)[animationIndex]}
+  </div>
+</div>
 
                   <div className="bg-slate-800 p-5 rounded-xl border border-slate-700/50">
                     <div className="text-5xl mb-3 text-purple-400">
