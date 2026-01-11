@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Signalman from "./Signalman";
-import { SEMAPHORE_MAP } from "../constants";
+import { SEMAPHORE_MAP, GET_CHAR_MAPPING } from "../constants";
 import { SPECIAL_SYMBOL_DICTIONARY, NUMBER_TO_WORD } from "../constants";
 import tricksImage from "./tricks.svg";
 import { SemaphorePosition } from "../types";
@@ -8,6 +8,33 @@ import { SemaphorePosition } from "../types";
 const Dictionary: React.FC = () => {
   const [selectedChar, setSelectedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [animationIndex, setAnimationIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Number to word mapping for animation
+  const NUMBER_WORD_MAP: Record<string, string> = {
+    "0": "ZRO",
+    "1": "ONE",
+    "2": "TWO",
+    "3": "TRE",
+    "4": "FOR",
+    "5": "FIV",
+    "6": "SIX",
+    "7": "SVN",
+    "8": "ATE",
+    "9": "NIN",
+  };
+
+  // Symbol to group mapping for animation
+  const SYMBOL_GROUP_MAP: Record<string, string> = {
+    "(": "KN",
+    ")": "KK",
+    ".": "AAA",
+    ",": "MIM",
+    "-": "DU",
+    "/": "XE",
+  };
 
   // Create combined dictionary entries
   const allEntries = [
@@ -100,6 +127,71 @@ const Dictionary: React.FC = () => {
   const selectedEntry = selectedChar
     ? allEntries.find((e) => e.char === selectedChar)
     : null;
+
+  // Get animation sequence for selected entry
+  const getAnimationSequence = (entry: typeof selectedEntry): string => {
+    if (!entry) return "";
+    if (entry.type === "number") {
+      return NUMBER_WORD_MAP[entry.char] || "";
+    }
+    if (entry.type === "symbol") {
+      return SYMBOL_GROUP_MAP[entry.char] || "";
+    }
+    return "";
+  };
+
+  // Start animation when entry changes
+  // Start animation when entry changes
+  useEffect(() => {
+    if (animationTimerRef.current) {
+      clearInterval(animationTimerRef.current);
+    }
+
+    if (selectedEntry && (selectedEntry.type === "number" || selectedEntry.type === "symbol")) {
+      const sequence = getAnimationSequence(selectedEntry);
+      if (sequence) {
+        setAnimationIndex(0);
+        setIsAnimating(true);
+
+        animationTimerRef.current = setInterval(() => {
+          setAnimationIndex((prev) => {
+            const next = prev + 1;
+            if (next >= sequence.length) {
+              if (animationTimerRef.current) {
+                clearInterval(animationTimerRef.current);
+              }
+              setIsAnimating(false);
+              return prev; // Stop at last character
+            }
+            return next;
+          });
+        }, 1000); // Change character every 800ms
+      }
+    } else {
+      setIsAnimating(false);
+      setAnimationIndex(0);
+    }
+
+    return () => {
+      if (animationTimerRef.current) {
+        clearInterval(animationTimerRef.current);
+      }
+    };
+  }, [selectedChar]);
+
+  // Get current character position for animation
+  const getCurrentAnimationPosition = () => {
+    if (!selectedEntry || !isAnimating) return { left: 0, right: 0 };
+
+    const sequence = getAnimationSequence(selectedEntry);
+    if (!sequence || animationIndex >= sequence.length) return { left: 0, right: 0 };
+
+    const currentChar = sequence[animationIndex];
+    const mapping = GET_CHAR_MAPPING(currentChar);
+    return { left: mapping.left, right: mapping.right };
+  };
+
+  const currentAnimationPos = getCurrentAnimationPosition();
 
   return (
     <div className="space-y-6 w-full animate-in fade-in duration-500">
@@ -244,7 +336,6 @@ const Dictionary: React.FC = () => {
                 {selectedEntry.type === "rest" && "REST"}
                 {selectedEntry.type === "number" && `${selectedEntry.char}`}
                 {selectedEntry.type === "symbol" && selectedEntry.name}
-                
               </h3>
 
               <p className="text-xs text-slate-400 mb-5">
@@ -255,7 +346,6 @@ const Dictionary: React.FC = () => {
                   `Transmitted as: ${selectedEntry.word}`}
                 {selectedEntry.type === "symbol" &&
                   `Signal: ${selectedEntry.group}`}
-                
               </p>
 
               {(selectedEntry.type === "letter" ||
@@ -294,6 +384,17 @@ const Dictionary: React.FC = () => {
 
               {selectedEntry.type === "number" && (
                 <div className="w-full space-y-3">
+                  <div className="bg-white rounded-2xl p-6 mb-3 shadow-lg w-full flex flex-col items-center justify-center overflow-hidden min-h-[220px]">
+                    <Signalman
+                      leftPos={currentAnimationPos.left as SemaphorePosition}
+                      rightPos={currentAnimationPos.right as SemaphorePosition}
+                      size={Math.min(window.innerWidth - 150, 200)}
+                    />
+                    <div className="mt-3 text-slate-700 font-mono text-sm font-bold">
+                      {isAnimating && getAnimationSequence(selectedEntry)[animationIndex]}
+                    </div>
+                  </div>
+
                   <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
                     <span className="block text-slate-500 font-bold uppercase text-[9px] mb-2">
                       Format
@@ -320,6 +421,17 @@ const Dictionary: React.FC = () => {
 
               {selectedEntry.type === "symbol" && (
                 <div className="w-full space-y-3">
+                  <div className="bg-white rounded-2xl p-6 mb-3 shadow-lg w-full flex flex-col items-center justify-center overflow-hidden min-h-[220px]">
+                    <Signalman
+                      leftPos={currentAnimationPos.left as SemaphorePosition}
+                      rightPos={currentAnimationPos.right as SemaphorePosition}
+                      size={Math.min(window.innerWidth - 150, 200)}
+                    />
+                    <div className="mt-3 text-slate-700 font-mono text-sm font-bold">
+                      {isAnimating && getAnimationSequence(selectedEntry)[animationIndex]}
+                    </div>
+                  </div>
+
                   <div className="bg-slate-800 p-5 rounded-xl border border-slate-700/50">
                     <div className="text-5xl mb-3 text-purple-400">
                       {selectedEntry.char}
@@ -378,20 +490,6 @@ const Dictionary: React.FC = () => {
           )}
         </div>
       </div>
-      {/* Image Section - Responsive */}
-      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-2 border-slate-200 shadow-lg">
-        <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center space-x-2">
-          <i className="fas fa-image text-purple-600"></i>
-          <span>Visual Learning Guide</span>
-        </h3>
-        <div className="w-full flex justify-center items-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 min-h-[200px]">
-          <img
-            src={tricksImage}
-            alt="Semaphore Learning Guide"
-            className="w-full h-auto max-w-full rounded-xl object-contain"
-          />
-        </div>
-      </div>
       {/* NATO Phonetic Alphabet */}
       <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-3xl border-2 border-blue-200 shadow-lg">
         <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center space-x-2">
@@ -443,6 +541,20 @@ const Dictionary: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+      {/* Image Section - Responsive */}
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-2 border-slate-200 shadow-lg">
+        <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center space-x-2">
+          <i className="fas fa-image text-purple-600"></i>
+          <span>Visual Learning Guide</span>
+        </h3>
+        <div className="w-full flex justify-center items-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 min-h-[200px]">
+          <img
+            src={tricksImage}
+            alt="Semaphore Learning Guide"
+            className="w-full h-auto max-w-full rounded-xl object-contain"
+          />
         </div>
       </div>
     </div>
