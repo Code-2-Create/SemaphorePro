@@ -557,9 +557,15 @@ const Dictionary: React.FC = () => {
       {/* Image Section - Responsive */}
       <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-2 border-slate-200 shadow-lg">
         <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center space-x-2">
-          <i className="fas fa-image text-purple-600"></i>
-          <span>Visual Learning Guide</span>
-        </h3>
+  <i className="fas fa-image text-purple-600"></i>
+  <span>Visual Learning Trick</span>
+</h3>
+
+<span className="block text-sm text-slate-600 mb-4">
+  These diagrams group alphabets into mirrored pairs and octant-based patterns,
+  making them easier to understand, learn, and remember at a glance.
+</span>
+
         <div className="w-full flex justify-center items-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-300 min-h-[200px]">
           <img
             src={tricksImage}

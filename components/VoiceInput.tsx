@@ -427,37 +427,35 @@ export const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
           Voice Input - Tap Mode
         </h2>
 
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl mb-4 border border-blue-200">
-          <div className="flex items-start gap-2">
-            <span className="text-2xl">🎯</span>
-            <div className="text-sm text-blue-900">
-              <p className="font-bold mb-1">Optimized for Mobile</p>
-              <ul className="space-y-1 text-xs">
-                <li>✅ Try to speak fast for Minimizing beeps.</li>
-                <li>✅ Tap to start, tap to stop</li>
-                <li>✅ Voice input works best at 60-80% speed.</li>
-                <li>✅ Works on Desktop, Android & iOS</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        
 
         <ul className="text-sm text-slate-600 space-y-2 mb-4">
           <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
             <span className="text-blue-500 font-bold mt-0.5">•</span>
-            <span>Tap microphone to START recording</span>
+            <span>Microphone permission is required to use voice input</span>
           </li>
+
           <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
             <span className="text-green-500 font-bold mt-0.5">•</span>
-            <span>Speak clearly (avoid background noise)</span>
+            <span>Say “next” to add a space while dictating</span>
           </li>
+
           <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
             <span className="text-amber-500 font-bold mt-0.5">•</span>
-            <span>Tap again to STOP and transcribe</span>
+            <span>Say “number” to insert a numeric symbol</span>
           </li>
+
           <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
             <span className="text-purple-500 font-bold mt-0.5">•</span>
-            <span>Use KN, KK, AAA, MIM, DU, XE for symbols</span>
+            <span>
+              Works best when you speak at a steady, moderate pace (around
+              70–85%)
+            </span>
+          </li>
+
+          <li className="flex items-start gap-2 hover:text-slate-800 transition-colors">
+            <span className="text-rose-500 font-bold mt-0.5">•</span>
+            <span>Try speaking slightly faster to avoid frequent beeps</span>
           </li>
         </ul>
 

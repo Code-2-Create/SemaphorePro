@@ -547,7 +547,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         </div>
       )}
 
-      {phrase && !isPlaying && (
+      {phrase && (
         <div className="w-full bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 fade-enter">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-slate-800 flex items-center space-x-3">
