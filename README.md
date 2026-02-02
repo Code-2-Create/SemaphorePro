@@ -1,10 +1,10 @@
-# ⚓ Semaphore Pro: NSC Practice
+# ⚓ Semaphore Pro:
 
 ![Version](https://img.shields.io/badge/Version-2.0-blue?style=for-the-badge)
 ![Role](https://img.shields.io/badge/Designed_For-NCC_Naval_Wing-navy?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Deployment_Ready-green?style=for-the-badge)
 
-**Semaphore Pro** is a high-performance, professional-grade training application specifically designed for **NCC Naval Wing cadets**. It serves as the ultimate tool for mastering the art of visual signaling in preparation for the **All India Nau Sainik Camp (AINSC)** and other naval competitions.
+**Semaphore Pro** is a high-performance, professional-grade training application specifically designed for **NCC Naval Wing cadets**. It serves as the ultimate tool for mastering the art of visual signaling in preparation for the **All India Nau Sainik Camp (AINSC)** and naval commuication.
 
 Developed by **Cadet Vinayak Sen** (1 MP Naval Unit, Bhopal), this tool bridges the gap between traditional flag training and modern digital learning.
 
@@ -43,7 +43,7 @@ A high-fidelity SVG-based Signalman that accurately renders all 8 standard semap
 
 ---
 
-## 🚀 Deployment Instructions
+<!-- ## 🚀 Deployment Instructions
 
 This project is configured for **Option 1 Deployment**, meaning it requires **zero installation** and no build tools like Node.js.
 
@@ -57,7 +57,7 @@ This project is configured for **Option 1 Deployment**, meaning it requires **ze
     - Click **Save**.
 4.  **Live URL:** Your site will be live at `https://your-username.github.io/semaphore-pro/`.
 
----
+--- -->
 
 ## 🎖️ Credits & Acknowledgments
 
