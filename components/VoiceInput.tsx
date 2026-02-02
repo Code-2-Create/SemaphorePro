@@ -424,7 +424,7 @@ export const VoiceGuideModal: React.FC<VoiceGuideModalProps> = ({
           className="text-lg font-black text-slate-800 mb-3 flex items-center gap-2"
         >
           <span className="text-2xl voice-guide-icon inline-block">🎙️</span>
-          Voice Input - Tap Mode
+          Voice Input - Read Rules Carefully !
         </h2>
 
         
