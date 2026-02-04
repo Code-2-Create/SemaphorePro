@@ -5,12 +5,221 @@ import { SPECIAL_SYMBOL_DICTIONARY, NUMBER_TO_WORD } from "../constants";
 import tricksImage from "./tricks.svg";
 import { SemaphorePosition } from "../types";
 
+// NATO Alphabet data with flag meanings and semaphore meanings
+const natoAlphabetData: Record<string, {
+  letter: string;
+  word: string;
+  image: string;
+  flagMeaning: string[];
+  semaphoreMeaning: string[] | null;
+}> = {
+  A: {
+    letter: "A",
+    word: "Alfa",
+    image: "Flags/ICS_Alfa.svg",
+    flagMeaning: ["I have a diver down; keep well clear at slow speed."],
+    semaphoreMeaning: ["Permission granted.", "'AR': End of transmission.", "'AS': Wait."]
+  },
+  B: {
+    letter: "B",
+    word: "Bravo",
+    image: "Flags/ICS_Bravo.svg",
+    flagMeaning: ["I am taking in or discharging or carrying dangerous goods/explosives."],
+    semaphoreMeaning: ["More to follow.", "'BT': Break."]
+  },
+  C: {
+    letter: "C",
+    word: "Charlie",
+    image: "Flags/ICS_Charlie.svg",
+    flagMeaning: ["Aircraft to land."],
+    semaphoreMeaning: ["Yes/Affirmative/Correct."]
+  },
+  D: {
+    letter: "D",
+    word: "Delta",
+    image: "Flags/ICS_Delta.svg",
+    flagMeaning: ["Keep clear of me; I am maneuvering with difficulty."],
+    semaphoreMeaning: null
+  },
+  E: {
+    letter: "E",
+    word: "Echo",
+    image: "Flags/ICS_Echo.svg",
+    flagMeaning: ["I am altering my course to starboard."],
+    semaphoreMeaning: ["Error Sign: Made by successions of E's."]
+  },
+  F: {
+    letter: "F",
+    word: "Foxtrot",
+    image: "Flags/ICS_Foxtrot.svg",
+    flagMeaning: ["I am disabled."],
+    semaphoreMeaning: null
+  },
+  G: {
+    letter: "G",
+    word: "Golf",
+    image: "Flags/ICS_Golf.svg",
+    flagMeaning: ["I require a pilot."],
+    semaphoreMeaning: null
+  },
+  H: {
+    letter: "H",
+    word: "Hotel",
+    image: "Flags/ICS_Hotel.svg",
+    flagMeaning: ["I have a pilot on board."],
+    semaphoreMeaning: null
+  },
+  I: {
+    letter: "I",
+    word: "India",
+    image: "Flags/ICS_India.svg",
+    flagMeaning: [
+      "I am altering my course to port.",
+      "At harbor: Ready to receive you alongside.",
+      "At sea: Ready to come alongside you."
+    ],
+    semaphoreMeaning: ["Separative Sign: 'II' denotes paragraph change."]
+  },
+  J: {
+    letter: "J",
+    word: "Juliett",
+    image: "Flags/ICS_Juliett.svg",
+    flagMeaning: ["Keep well clear of me: I am on fire and have dangerous cargo on board."],
+    semaphoreMeaning: ["Direction Sign: By making 'J'."]
+  },
+  K: {
+    letter: "K",
+    word: "Kilo",
+    image: "Flags/ICS_Kilo.svg",
+    flagMeaning: ["I wish to communicate with you.", "I am operating helicopters."],
+    semaphoreMeaning: null
+  },
+  L: {
+    letter: "L",
+    word: "Lima",
+    image: "Flags/ICS_Lima.svg",
+    flagMeaning: ["Stop your vessel immediately."],
+    semaphoreMeaning: null
+  },
+  M: {
+    letter: "M",
+    word: "Mike",
+    image: "Flags/ICS_Mike.svg",
+    flagMeaning: [
+      "My vessel is stopped and making no way through the water.",
+      "At sea: Carrying stretcher patient.",
+      "At harbor: Medical duty ship."
+    ],
+    semaphoreMeaning: null
+  },
+  N: {
+    letter: "N",
+    word: "November",
+    image: "Flags/ICS_November.svg",
+    flagMeaning: ["Negative/No."],
+    semaphoreMeaning: null
+  },
+  O: {
+    letter: "O",
+    word: "Oscar",
+    image: "Flags/ICS_Oscar.svg",
+    flagMeaning: ["Man overboard."],
+    semaphoreMeaning: null
+  },
+  P: {
+    letter: "P",
+    word: "Papa",
+    image: "Flags/ICS_Papa.svg",
+    flagMeaning: ["In harbour: All persons should report on board as the vessel is about to proceed to sea."],
+    semaphoreMeaning: null
+  },
+  Q: {
+    letter: "Q",
+    word: "Quebec",
+    image: "Flags/ICS_Quebec.svg",
+    flagMeaning: ["My vessel is 'healthy' and I request free pratique."],
+    semaphoreMeaning: null
+  },
+  R: {
+    letter: "R",
+    word: "Romeo",
+    image: "Flags/ICS_Romeo.svg",
+    flagMeaning: ["Preparing for RAS (Replenishment At Sea).", "At harbor: Ready duty ship."],
+    semaphoreMeaning: null
+  },
+  S: {
+    letter: "S",
+    word: "Sierra",
+    image: "Flags/ICS_Sierra.svg",
+    flagMeaning: ["I am operating astern propulsion/ moving forward.", "Drill Signal."],
+    semaphoreMeaning: null
+  },
+  T: {
+    letter: "T",
+    word: "Tango",
+    image: "Flags/ICS_Tango.svg",
+    flagMeaning: ["Keep clear of me: I am engaged in travelling."],
+    semaphoreMeaning: null
+  },
+  U: {
+    letter: "U",
+    word: "Uniform",
+    image: "Flags/ICS_Uniform.svg",
+    flagMeaning: ["You are running into danger.", "At harbor: I am anchoring/ weighing anchor."],
+    semaphoreMeaning: ["Attention Sign: By making 'U' and arms waved up and down."]
+  },
+  V: {
+    letter: "V",
+    word: "Victor",
+    image: "Flags/ICS_Victor.svg",
+    flagMeaning: ["I require assistance.", "Ship is open to visitors."],
+    semaphoreMeaning: null
+  },
+  W: {
+    letter: "W",
+    word: "Whiskey",
+    image: "Flags/ICS_Whiskey.svg",
+    flagMeaning: ["I require medical assistance."],
+    semaphoreMeaning: ["'WB': Word before.", "'WA': Word after."]
+  },
+  X: {
+    letter: "X",
+    word: "X-ray",
+    image: "Flags/ICS_X-ray.svg",
+    flagMeaning: ["Stop carrying out your intentions and watch for my signals.", "Exercise."],
+    semaphoreMeaning: null
+  },
+  Y: {
+    letter: "Y",
+    word: "Yankee",
+    image: "Flags/ICS_Yankee.svg",
+    flagMeaning: ["I am dragging my anchor.", "I am keeping visual watch."],
+    semaphoreMeaning: null
+  },
+  Z: {
+    letter: "Z",
+    word: "Zulu",
+    image: "Flags/ICS_Zulu.svg",
+    flagMeaning: ["I require a tug."],
+    semaphoreMeaning: null
+  }
+};
+
+const flagImages = import.meta.glob("./Flags/*.svg", {
+  eager: true,
+  import: "default",
+}) as Record<string, string>;
+
 const Dictionary: React.FC = () => {
   const [selectedChar, setSelectedChar] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [animationIndex, setAnimationIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedNATOLetter, setSelectedNATOLetter] = useState<string | null>(null);
+  const getFlagSrc = (relativePath: string) =>
+    flagImages[`./${relativePath}`] ??
+    new URL(`./${relativePath}`, import.meta.url).href;
 
   // Number to word mapping for animation
   const NUMBER_WORD_MAP: Record<string, string> = {
@@ -421,7 +630,7 @@ const Dictionary: React.FC = () => {
                     </span>
                     <p className="text-xs text-slate-300 font-mono">
                       ZONE {selectedEntry.char}
-                      <br />→ ZONE NUM {selectedEntry.word} NUM
+                      <br />-&gt; ZONE NUM {selectedEntry.word} NUM
                     </p>
                   </div>
                 </div>
@@ -461,7 +670,7 @@ const Dictionary: React.FC = () => {
                       Breakdown
                     </span>
                     <p className="text-xs text-slate-300 font-mono">
-                      {selectedEntry.group!.split("").join(" → ")}
+                      {selectedEntry.group!.split("").join(" -> ")}
                     </p>
                   </div>
                 </div>
@@ -540,9 +749,10 @@ const Dictionary: React.FC = () => {
             { letter: "Y", word: "Yankee" },
             { letter: "Z", word: "Zulu" },
           ].map((item) => (
-            <div
+            <button
               key={item.letter}
-              className="bg-white/90 backdrop-blur-sm border-2 border-blue-200 rounded-xl p-3 text-center hover:shadow-md hover:scale-105 transition-all"
+              onClick={() => setSelectedNATOLetter(item.letter)}
+              className="bg-white/90 backdrop-blur-sm border-2 border-blue-200 rounded-xl p-3 text-center hover:shadow-md hover:scale-105 transition-all cursor-pointer hover:border-blue-400"
             >
               <div className="text-2xl font-black text-blue-700 mb-1">
                 {item.letter}
@@ -550,10 +760,83 @@ const Dictionary: React.FC = () => {
               <div className="text-sm font-bold text-slate-700">
                 {item.word}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {/* NATO Alphabet Modal */}
+      {selectedNATOLetter && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedNATOLetter(null)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-6 rounded-t-3xl flex justify-between items-center">
+              <h2 className="text-2xl font-black">
+                {selectedNATOLetter} - {natoAlphabetData[selectedNATOLetter].word}
+              </h2>
+              <button
+                onClick={() => setSelectedNATOLetter(null)}
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Flag Image */}
+              <div className="flex justify-center bg-slate-50 rounded-2xl p-6 border-2 border-slate-200">
+                <img
+                  src={getFlagSrc(natoAlphabetData[selectedNATOLetter].image)}
+                  alt={`${natoAlphabetData[selectedNATOLetter].word} flag`}
+                  className="w-48 h-48 object-contain"
+                />
+              </div>
+
+              {/* Flag Meaning */}
+              <div className="bg-blue-50 rounded-2xl p-5 border-2 border-blue-200">
+                <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center space-x-2">
+                  <i className="fas fa-flag text-blue-600"></i>
+                  <span>Flag Meaning</span>
+                </h3>
+                <ul className="space-y-2">
+                  {natoAlphabetData[selectedNATOLetter].flagMeaning.map((meaning, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <span className="text-blue-600 font-bold mt-1">-</span>
+                      <span className="text-slate-700">{meaning}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Semaphore Meaning (if exists) */}
+              {natoAlphabetData[selectedNATOLetter].semaphoreMeaning && (
+                <div className="bg-purple-50 rounded-2xl p-5 border-2 border-purple-200">
+                  <h3 className="text-lg font-black text-slate-800 mb-3 flex items-center space-x-2">
+                    <i className="fas fa-male text-purple-600"></i>
+                    <span>Semaphore Meaning</span>
+                  </h3>
+                  <ul className="space-y-2">
+                    {natoAlphabetData[selectedNATOLetter].semaphoreMeaning!.map((meaning, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className="text-purple-600 font-bold mt-1">-</span>
+                        <span className="text-slate-700">{meaning}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Image Section - Responsive */}
       <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl border-2 border-slate-200 shadow-lg">
         <h3 className="text-xl font-black text-slate-800 mb-4 flex items-center space-x-2">
