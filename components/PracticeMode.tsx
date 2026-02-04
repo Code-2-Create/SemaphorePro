@@ -25,6 +25,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const [isFinished, setIsFinished] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [showVoiceGuide, setShowVoiceGuide] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const lastBlinkIndexRef = useRef<number>(-1);
@@ -306,7 +307,7 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   const transmittedText = transmissionQueue.join("").replace(/#/g, "NUM ");
 
   return (
-    <div className="flex flex-col items-center space-y-6 w-full">
+    <div className="flex flex-col w-full h-screen overflow-hidden">
       <style>{`
         @keyframes shimmer {
           0% { background-position: -1000px 0; }
@@ -346,6 +347,16 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         .fade-enter {
           animation: fadeIn 0.6s ease-out;
         }
+        
+        /* Mobile keyboard optimization */
+        @media (max-width: 768px) {
+          .mobile-compact {
+            padding: 0.75rem !important;
+          }
+          .mobile-compact-signalman {
+            padding: 0.5rem 0 !important;
+          }
+        }
       `}</style>
 
       <VoiceGuideModal
@@ -354,305 +365,319 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         onCancel={cancelVoiceGuide}
       />
 
-      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-3xl shadow-xl border border-slate-200 w-full flex flex-col items-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500"></div>
+      {/* Scrollable Container */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col items-center space-y-4 md:space-y-6 w-full p-4">
+          
+          {/* Controls Section - Compact on mobile */}
+          <div className={`bg-white/80 backdrop-blur-sm ${isInputFocused ? 'mobile-compact' : 'p-6'} rounded-3xl shadow-xl border border-slate-200 w-full flex flex-col items-center relative overflow-hidden transition-all duration-300`}>
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500"></div>
 
-        <div className="flex flex-col w-full mb-6 space-y-4">
-          <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
-            {!isPlaying ? (
-              <>
-                <button
-                  onClick={() => startPractice("short")}
-                  className="flex-1 px-4 py-3 hover:bg-white hover:shadow-sm rounded-xl transition-all text-xs font-bold text-slate-600 flex flex-col items-center space-y-1 hover:scale-105 active:scale-95"
-                >
-                  <i className="fas fa-bolt text-amber-500 text-lg"></i>
-                  <span>Short</span>
-                </button>
-                <button
-                  onClick={() => startPractice("long")}
-                  className="flex-1 px-4 py-3 hover:bg-white hover:shadow-sm rounded-xl transition-all text-xs font-bold text-slate-600 flex flex-col items-center space-y-1 hover:scale-105 active:scale-95"
-                >
-                  <i className="fas fa-anchor text-blue-500 text-lg"></i>
-                  <span>Message</span>
-                </button>
-                <button
-                  onClick={() => startPractice("drill")}
-                  className="flex-1 px-4 py-3 bg-blue-600 shadow-md rounded-xl transition-all text-xs font-black text-white flex flex-col items-center space-y-1 hover:bg-blue-700 hover:scale-105 active:scale-95"
-                >
-                  <i className="fas fa-shield-halved text-lg"></i>
-                  <span>40x40</span>
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setIsPlaying(false)}
-                className="flex-1 px-6 py-3 bg-red-500 text-white shadow-lg rounded-xl transition-all text-xs font-black flex items-center justify-center space-x-2"
-                style={{
-                  animation: "glow 1s ease-in-out infinite",
-                }}
-              >
-                <i className="fas fa-stop"></i>
-                <span>ABORT</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <button
-              onClick={() => setShowHints(!showHints)}
-              className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl border-2 transition-all ${
-                showHints
-                  ? "bg-amber-50 border-amber-300 text-amber-700 shadow-sm scale-105"
-                  : "bg-slate-50 border-slate-200 text-slate-500 hover:scale-105"
-              } active:scale-95`}
-            >
-              <i className={`fas ${showHints ? "fa-eye" : "fa-eye-slash"}`}></i>
-              <span className="text-xs font-black uppercase tracking-wider">
-                {showHints ? "Hints ON" : "Hints OFF"}
-              </span>
-            </button>
-
-            {speechSupported && (
-              <button
-                onClick={toggleVoiceInput}
-                disabled={!canStartVoiceInput || isFinished}
-                className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2.5 rounded-xl border-2 transition-all ${
-                  isListening
-                    ? "bg-red-50 border-red-300 text-red-700 shadow-sm listening-button"
-                    : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:scale-105"
-                } ${
-                  !canStartVoiceInput || isFinished
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                } active:scale-95`}
-                aria-pressed={isListening}
-                aria-label="Toggle voice input"
-              >
-                <i
-                  className={`fas fa-microphone ${
-                    isListening ? "animate-pulse" : ""
-                  }`}
-                ></i>
-                <span className="text-xs font-black uppercase tracking-wider">
-                  {isListening ? "Tap to Stop" : "Voice Input"}
-                </span>
-              </button>
-            )}
-
-            <div className="w-full sm:w-auto flex flex-col items-center sm:items-end">
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                Speed: {speedLevel}%
-              </span>
-              <input
-                type="range"
-                min="1"
-                max="100"
-                step="1"
-                value={speedLevel}
-                onChange={(e) => setSpeedLevel(parseInt(e.target.value))}
-                className="w-full sm:w-32 accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none transition-all hover:accent-blue-700"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="relative flex flex-col items-center py-6">
-          {isPlaying && showHints && currentChar !== " " && (
-            <div className="absolute -top-4 bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-white text-white w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black shadow-2xl z-20 hint-badge">
-              {currentChar === "#" ? "NUM" : currentChar}
-            </div>
-          )}
-
-          <Signalman
-            leftPos={currentSignal.left}
-            rightPos={currentSignal.right}
-            size={Math.min(window.innerWidth - 100, 360)}
-          />
-
-          <div className="mt-8 flex flex-col items-center w-full max-w-md px-4">
-            <div className="flex justify-between w-full text-[9px] uppercase font-black text-slate-500 tracking-wider mb-2">
-              <span className="flex items-center space-x-2">
-                <span
-                  className={`w-2 h-2 rounded-full transition-all duration-100 ${
-                    blinkOn
-                      ? "bg-red-500 scale-150"
-                      : isPlaying
-                      ? "bg-green-500"
-                      : "bg-slate-300"
-                  }`}
-                  style={{
-                    boxShadow: blinkOn
-                      ? "0 0 12px rgba(239, 68, 68, 0.9)"
-                      : "none",
-                  }}
-                ></span>
-
-                <span>
-                  {isTransmittingChar
-                    ? "Transmitting..."
-                    : isPlaying
-                    ? "Waiting"
-                    : transmissionQueue.length > 0
-                    ? "Ready"
-                    : "READY"}
-                </span>
-              </span>
-              <span>
-                {transmissionQueue.length > 0
-                  ? `${currentIndex + 1} / ${transmissionQueue.length}`
-                  : "READY"}
-              </span>
-            </div>
-            <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300 shadow-md"
-                style={{
-                  width: `${
-                    transmissionQueue.length > 0
-                      ? ((currentIndex + 1) / transmissionQueue.length) * 100
-                      : 0
-                  }%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {phrase && !isPlaying && currentIndex < transmissionQueue.length - 1 && (
-        <div className="w-full bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 fade-enter">
-          <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center space-x-2">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-200 transition-colors">
-              <i className="fas fa-satellite-dish text-blue-600"></i>
-            </div>
-            <span className="text-xl">Transmission Controls</span>
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <button
-              onClick={() => setIsPlaying(true)}
-              className="group text-green-600 font-bold hover:text-green-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-green-50 active:scale-95 hover:scale-105 border-2 border-green-200"
-            >
-              <i className="fas fa-play"></i>
-              <span>Resume Transmission</span>
-            </button>
-            <button
-              onClick={restartTransmission}
-              className="group text-blue-600 font-bold hover:text-blue-700 transition-all flex items-center justify-center space-x-3 px-6 py-3 rounded-2xl hover:bg-blue-50 active:scale-95 hover:scale-105 border-2 border-blue-200"
-              title="Restart transmission from the beginning"
-            >
-              <i className="fas fa-redo"></i>
-              <span>Restart Transmission</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {phrase && (
-        <div className="w-full bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 fade-enter">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-slate-800 flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-200 transition-colors">
-                <i className="fas fa-keyboard"></i>
+            <div className="flex flex-col w-full mb-4 md:mb-6 space-y-3 md:space-y-4">
+              <div className="flex justify-center bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                {!isPlaying ? (
+                  <>
+                    <button
+                      onClick={() => startPractice("short")}
+                      className="flex-1 px-2 md:px-4 py-2 md:py-3 hover:bg-white hover:shadow-sm rounded-xl transition-all text-xs font-bold text-slate-600 flex flex-col items-center space-y-1 hover:scale-105 active:scale-95"
+                    >
+                      <i className="fas fa-bolt text-amber-500 text-base md:text-lg"></i>
+                      <span className="text-[10px] md:text-xs">Short</span>
+                    </button>
+                    <button
+                      onClick={() => startPractice("long")}
+                      className="flex-1 px-2 md:px-4 py-2 md:py-3 hover:bg-white hover:shadow-sm rounded-xl transition-all text-xs font-bold text-slate-600 flex flex-col items-center space-y-1 hover:scale-105 active:scale-95"
+                    >
+                      <i className="fas fa-anchor text-blue-500 text-base md:text-lg"></i>
+                      <span className="text-[10px] md:text-xs">Message</span>
+                    </button>
+                    <button
+                      onClick={() => startPractice("drill")}
+                      className="flex-1 px-2 md:px-4 py-2 md:py-3 bg-blue-600 shadow-md rounded-xl transition-all text-xs font-black text-white flex flex-col items-center space-y-1 hover:bg-blue-700 hover:scale-105 active:scale-95"
+                    >
+                      <i className="fas fa-shield-halved text-base md:text-lg"></i>
+                      <span className="text-[10px] md:text-xs">40x40</span>
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setIsPlaying(false)}
+                    className="flex-1 px-4 md:px-6 py-2 md:py-3 bg-red-500 text-white shadow-lg rounded-xl transition-all text-xs font-black flex items-center justify-center space-x-2"
+                    style={{
+                      animation: "glow 1s ease-in-out infinite",
+                    }}
+                  >
+                    <i className="fas fa-stop"></i>
+                    <span>ABORT</span>
+                  </button>
+                )}
               </div>
-              <span>Decode Transcription</span>
-            </h3>
-            {isFinished && (
-              <div
-                className={`px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
-                  calculateAccuracy(phrase, userInput) > 85
-                    ? "bg-green-100 text-green-700 shadow-sm"
-                    : "bg-orange-100 text-orange-700 shadow-sm"
-                }`}
-              >
-                {calculateAccuracy(phrase, userInput)}% Accuracy
-              </div>
-            )}
-          </div>
 
-          {isListening && (
-            <div className="mb-4 p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl transition-all hover:shadow-md">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="relative">
-                  <i className="fas fa-microphone text-red-600 animate-pulse text-lg"></i>
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
-                </div>
-                <span className="text-sm font-black text-red-700">
-                  🎙️ RECORDING - Tap button to stop
-                </span>
-              </div>
-              {interimTranscript && (
-                <div className="mt-2 p-2 bg-white/70 rounded-lg">
-                  <p className="text-xs text-slate-600 italic">
-                    Listening: {interimTranscript}...
-                  </p>
+              {!isInputFocused && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 md:gap-3">
+                  <button
+                    onClick={() => setShowHints(!showHints)}
+                    className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl border-2 transition-all text-xs ${
+                      showHints
+                        ? "bg-amber-50 border-amber-300 text-amber-700 shadow-sm scale-105"
+                        : "bg-slate-50 border-slate-200 text-slate-500 hover:scale-105"
+                    } active:scale-95`}
+                  >
+                    <i className={`fas ${showHints ? "fa-eye" : "fa-eye-slash"} text-sm`}></i>
+                    <span className="font-black uppercase tracking-wider">
+                      {showHints ? "Hints ON" : "Hints OFF"}
+                    </span>
+                  </button>
+
+                  {speechSupported && (
+                    <button
+                      onClick={toggleVoiceInput}
+                      disabled={!canStartVoiceInput || isFinished}
+                      className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-3 md:px-4 py-2 md:py-2.5 rounded-xl border-2 transition-all text-xs ${
+                        isListening
+                          ? "bg-red-50 border-red-300 text-red-700 shadow-sm listening-button"
+                          : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:scale-105"
+                      } ${
+                        !canStartVoiceInput || isFinished
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      } active:scale-95`}
+                      aria-pressed={isListening}
+                      aria-label="Toggle voice input"
+                    >
+                      <i
+                        className={`fas fa-microphone text-sm ${
+                          isListening ? "animate-pulse" : ""
+                        }`}
+                      ></i>
+                      <span className="font-black uppercase tracking-wider">
+                        {isListening ? "Tap to Stop" : "Voice Input"}
+                      </span>
+                    </button>
+                  )}
+
+                  <div className="w-full sm:w-auto flex flex-col items-center sm:items-end">
+                    <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1 md:mb-2">
+                      Speed: {speedLevel}%
+                    </span>
+                    <input
+                      type="range"
+                      min="1"
+                      max="100"
+                      step="1"
+                      value={speedLevel}
+                      onChange={(e) => setSpeedLevel(parseInt(e.target.value))}
+                      className="w-full sm:w-32 accent-blue-600 cursor-pointer h-2 bg-slate-200 rounded-lg appearance-none transition-all hover:accent-blue-700"
+                    />
+                  </div>
                 </div>
               )}
             </div>
-          )}
 
-          {voiceError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-start gap-2">
-                <i className="fas fa-exclamation-circle text-red-600 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-red-700 mb-1">
-                    Voice Input Error
-                  </p>
-                  <p className="text-xs text-red-600">{voiceError}</p>
+            {/* Signalman - Always visible, compact on mobile when typing */}
+            <div className={`relative flex flex-col items-center ${isInputFocused ? 'mobile-compact-signalman py-2' : 'py-4 md:py-6'} w-full transition-all duration-300`}>
+              {isPlaying && showHints && currentChar !== " " && !isInputFocused && (
+                <div className="absolute -top-2 md:-top-4 bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-white text-white w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-lg md:text-xl font-black shadow-2xl z-20 hint-badge">
+                  {currentChar === "#" ? "NUM" : currentChar}
                 </div>
+              )}
+
+              <Signalman
+                leftPos={currentSignal.left}
+                rightPos={currentSignal.right}
+                size={Math.min(window.innerWidth - (isInputFocused ? 80 : 100), isInputFocused ? 200 : 360)}
+              />
+
+              <div className="mt-4 md:mt-8 flex flex-col items-center w-full max-w-md px-2 md:px-4">
+                <div className="flex justify-between w-full text-[8px] md:text-[9px] uppercase font-black text-slate-500 tracking-wider mb-1 md:mb-2">
+                  <span className="flex items-center space-x-1 md:space-x-2">
+                    <span
+                      className={`w-2 h-2 rounded-full transition-all duration-100 ${
+                        blinkOn
+                          ? "bg-red-500 scale-150"
+                          : isPlaying
+                          ? "bg-green-500"
+                          : "bg-slate-300"
+                      }`}
+                      style={{
+                        boxShadow: blinkOn
+                          ? "0 0 12px rgba(239, 68, 68, 0.9)"
+                          : "none",
+                      }}
+                    ></span>
+
+                    <span className="text-[9px] md:text-[10px]">
+                      {isTransmittingChar
+                        ? "Transmitting..."
+                        : isPlaying
+                        ? "Waiting"
+                        : transmissionQueue.length > 0
+                        ? "Ready"
+                        : "READY"}
+                    </span>
+                  </span>
+                  <span className="text-[9px] md:text-[10px]">
+                    {transmissionQueue.length > 0
+                      ? `${currentIndex + 1} / ${transmissionQueue.length}`
+                      : "READY"}
+                  </span>
+                </div>
+                <div className="h-2 md:h-3 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200 shadow-inner">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300 shadow-md"
+                    style={{
+                      width: `${
+                        transmissionQueue.length > 0
+                          ? ((currentIndex + 1) / transmissionQueue.length) * 100
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Transmission Controls */}
+          {phrase && !isPlaying && currentIndex < transmissionQueue.length - 1 && !isInputFocused && (
+            <div className="w-full bg-white p-4 md:p-6 rounded-[2rem] shadow-xl border border-slate-100 fade-enter">
+              <h3 className="text-sm font-bold text-slate-700 mb-3 md:mb-4 flex items-center space-x-2">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-200 transition-colors">
+                  <i className="fas fa-satellite-dish text-blue-600 text-sm md:text-base"></i>
+                </div>
+                <span className="text-base md:text-xl">Transmission Controls</span>
+              </h3>
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-3 w-full">
+                <button
+                  onClick={() => setIsPlaying(true)}
+                  className="group text-green-600 font-bold hover:text-green-700 transition-all flex items-center justify-center space-x-2 md:space-x-3 px-4 md:px-6 py-2 md:py-3 rounded-2xl hover:bg-green-50 active:scale-95 hover:scale-105 border-2 border-green-200 text-sm"
+                >
+                  <i className="fas fa-play text-sm"></i>
+                  <span>Resume</span>
+                </button>
+                <button
+                  onClick={restartTransmission}
+                  className="group text-blue-600 font-bold hover:text-blue-700 transition-all flex items-center justify-center space-x-2 md:space-x-3 px-4 md:px-6 py-2 md:py-3 rounded-2xl hover:bg-blue-50 active:scale-95 hover:scale-105 border-2 border-blue-200 text-sm"
+                  title="Restart transmission from the beginning"
+                >
+                  <i className="fas fa-redo text-sm"></i>
+                  <span>Restart</span>
+                </button>
               </div>
             </div>
           )}
 
-          <textarea
-            className="w-full p-6 bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all font-mono text-xl uppercase placeholder:text-slate-300 shadow-inner hover:border-slate-200"
-            rows={4}
-            placeholder="Type or speak your decoded message here..."
-            value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            disabled={isFinished}
-          />
-
-          <div className="mt-8 flex flex-col md:flex-row justify-end items-center gap-6">
-            {!isFinished ? (
-              <button
-                onClick={handleSubmit}
-                className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] hover:from-slate-800 hover:to-slate-700 transition-all shadow-xl hover:shadow-2xl active:scale-95 flex items-center justify-center space-x-3 hover:scale-105"
-              >
-                <span>Submit Log</span>
-                <i className="fas fa-paper-plane"></i>
-              </button>
-            ) : (
-              <div className="flex flex-col w-full space-y-3">
-                <div className="flex flex-col items-end bg-green-50 p-6 rounded-[1.5rem] border border-green-100 w-full overflow-hidden shadow-sm result-card hover:shadow-md transition-shadow">
-                  <p className="text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-2">
-                    Original Secure Message
-                  </p>
-                  <p className="text-lg font-mono font-bold text-green-800 break-all leading-relaxed">
-                    {decodeSpecialGroups(phrase)}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end bg-blue-50 p-6 rounded-[1.5rem] border border-blue-100 w-full overflow-hidden shadow-sm result-card hover:shadow-md transition-shadow">
-                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2">
-                    Transmitted Signal
-                  </p>
-                  <p className="text-lg font-mono font-bold text-blue-800 break-all leading-relaxed">
-                    {transmittedText}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end bg-purple-50 p-6 rounded-[1.5rem] border border-purple-100 w-full overflow-hidden shadow-sm result-card hover:shadow-md transition-shadow">
-                  <p className="text-[10px] font-black text-purple-600 uppercase tracking-[0.2em] mb-2">
-                    Your Answer
-                  </p>
-                  <p className="text-lg font-mono font-bold text-purple-800 break-all leading-relaxed">
-                    {userInput || "(Empty)"}
-                  </p>
-                </div>
+          {/* Input Section - Sticky at bottom on mobile when keyboard is open */}
+          {phrase && (
+            <div className="w-full bg-white p-4 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border border-slate-100 fade-enter">
+              <div className="flex justify-between items-center mb-4 md:mb-6">
+                <h3 className="text-base md:text-xl font-bold text-slate-800 flex items-center space-x-2 md:space-x-3">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 hover:bg-blue-200 transition-colors">
+                    <i className="fas fa-keyboard text-sm md:text-base"></i>
+                  </div>
+                  <span>Decode</span>
+                </h3>
+                {isFinished && (
+                  <div
+                    className={`px-3 md:px-4 py-1 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest transition-all ${
+                      calculateAccuracy(phrase, userInput) > 85
+                        ? "bg-green-100 text-green-700 shadow-sm"
+                        : "bg-orange-100 text-orange-700 shadow-sm"
+                    }`}
+                  >
+                    {calculateAccuracy(phrase, userInput)}%
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {isListening && (
+                <div className="mb-3 md:mb-4 p-3 md:p-4 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl transition-all">
+                  <div className="flex items-center space-x-2 md:space-x-3 mb-2">
+                    <div className="relative">
+                      <i className="fas fa-microphone text-red-600 animate-pulse text-base md:text-lg"></i>
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+                    </div>
+                    <span className="text-xs md:text-sm font-black text-red-700">
+                      🎙️ RECORDING
+                    </span>
+                  </div>
+                  {interimTranscript && (
+                    <div className="mt-2 p-2 bg-white/70 rounded-lg">
+                      <p className="text-[10px] md:text-xs text-slate-600 italic">
+                        {interimTranscript}...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {voiceError && (
+                <div className="mb-3 md:mb-4 p-2 md:p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <i className="fas fa-exclamation-circle text-red-600 mt-0.5 text-sm"></i>
+                    <div className="flex-1">
+                      <p className="text-[10px] md:text-xs font-bold text-red-700 mb-1">
+                        Voice Error
+                      </p>
+                      <p className="text-[10px] md:text-xs text-red-600">{voiceError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                className="w-full p-4 md:p-6 bg-slate-50 border-2 border-slate-100 rounded-[1.5rem] focus:border-blue-500 focus:ring-2 md:focus:ring-4 focus:ring-blue-100 outline-none transition-all font-mono text-base md:text-xl uppercase placeholder:text-slate-300 shadow-inner hover:border-slate-200"
+                rows={3}
+                placeholder="Type or speak..."
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
+                disabled={isFinished}
+              />
+
+              <div className="mt-4 md:mt-8 flex flex-col md:flex-row justify-end items-center gap-3 md:gap-6">
+                {!isFinished ? (
+                  <button
+                    onClick={handleSubmit}
+                    className="w-full md:w-auto px-8 md:px-12 py-3 md:py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl font-black text-xs md:text-sm uppercase tracking-[0.2em] hover:from-slate-800 hover:to-slate-700 transition-all shadow-xl hover:shadow-2xl active:scale-95 flex items-center justify-center space-x-2 md:space-x-3 hover:scale-105"
+                  >
+                    <span>Submit Log</span>
+                    <i className="fas fa-paper-plane text-sm"></i>
+                  </button>
+                ) : (
+                  <div className="flex flex-col w-full space-y-2 md:space-y-3">
+                    <div className="flex flex-col items-end bg-green-50 p-4 md:p-6 rounded-[1.5rem] border border-green-100 w-full overflow-hidden shadow-sm result-card hover:shadow-md transition-shadow">
+                      <p className="text-[9px] md:text-[10px] font-black text-green-600 uppercase tracking-[0.2em] mb-1 md:mb-2">
+                        Original Message
+                      </p>
+                      <p className="text-sm md:text-lg font-mono font-bold text-green-800 break-all leading-relaxed">
+                        {decodeSpecialGroups(phrase)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end bg-blue-50 p-4 md:p-6 rounded-[1.5rem] border border-blue-100 w-full overflow-hidden shadow-sm result-card hover:shadow-md transition-shadow">
+                      <p className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-1 md:mb-2">
+                        Transmitted Signal
+                      </p>
+                      <p className="text-sm md:text-lg font-mono font-bold text-blue-800 break-all leading-relaxed">
+                        {transmittedText}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end bg-purple-50 p-4 md:p-6 rounded-[1.5rem] border border-purple-100 w-full overflow-hidden shadow-sm result-card hover:shadow-md transition-shadow">
+                      <p className="text-[9px] md:text-[10px] font-black text-purple-600 uppercase tracking-[0.2em] mb-1 md:mb-2">
+                        Your Answer
+                      </p>
+                      <p className="text-sm md:text-lg font-mono font-bold text-purple-800 break-all leading-relaxed">
+                        {userInput || "(Empty)"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
