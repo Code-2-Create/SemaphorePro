@@ -309,6 +309,15 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
   return (
     <div className="flex flex-col w-full h-screen overflow-hidden">
       <style>{`
+        /* Hide scrollbar but keep functionality */
+        .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;  /* Chrome, Safari and Opera */
+        }
+        
         @keyframes shimmer {
           0% { background-position: -1000px 0; }
           100% { background-position: 1000px 0; }
@@ -365,9 +374,9 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
         onCancel={cancelVoiceGuide}
       />
 
-      {/* Scrollable Container */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col items-center space-y-4 md:space-y-6 w-full p-4">
+{/* Scrollable Container */}
+      <div className="flex-1 overflow-hidden">
+        <div className="flex flex-col items-center space-y-4 md:space-y-6 w-full p-4 h-full overflow-y-auto scrollbar-hide">
           
           {/* Controls Section - Compact on mobile */}
           <div className={`bg-white/80 backdrop-blur-sm ${isInputFocused ? 'mobile-compact' : 'p-6'} rounded-3xl shadow-xl border border-slate-200 w-full flex flex-col items-center relative overflow-hidden transition-all duration-300`}>
@@ -476,8 +485,8 @@ const PracticeMode: React.FC<PracticeModeProps> = ({ onSessionComplete }) => {
 
             {/* Signalman - Always visible, compact on mobile when typing */}
             <div className={`relative flex flex-col items-center ${isInputFocused ? 'mobile-compact-signalman py-2' : 'py-4 md:py-6'} w-full transition-all duration-300`}>
-              {isPlaying && showHints && currentChar !== " " && !isInputFocused && (
-                <div className="absolute -top-2 md:-top-4 bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-white text-white w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-lg md:text-xl font-black shadow-2xl z-20 hint-badge">
+              {isPlaying && showHints && currentChar !== " " && (
+                <div className={`absolute ${isInputFocused ? '-top-1' : '-top-2 md:-top-4'} bg-gradient-to-br from-amber-400 to-orange-500 border-2 border-white text-white ${isInputFocused ? 'w-10 h-10' : 'w-12 h-12 md:w-16 md:h-16'} rounded-2xl flex items-center justify-center ${isInputFocused ? 'text-base' : 'text-lg md:text-xl'} font-black shadow-2xl z-20 hint-badge`}>
                   {currentChar === "#" ? "NUM" : currentChar}
                 </div>
               )}
