@@ -1,7 +1,7 @@
 import React, { useRef, useMemo, useEffect, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import torsoImage from './torso.png';
+import torsoImage from './torso.avif';
 
 type SemaphorePosition = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 

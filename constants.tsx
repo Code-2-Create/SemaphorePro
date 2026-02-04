@@ -16,7 +16,7 @@ export const SEMAPHORE_MAP: SignalMapping[] = [
   { char: 'A', left: 0, right: 1 },
   { char: 'B', left: 0, right: 2 },
   { char: 'C', left: 0, right: 3 },
-  { char: 'D', left: 0, right: 4 },
+  { char: 'D', left: 4, right: 0 },
   { char: 'E', left: 5, right: 0 },
   { char: 'F', left: 6, right: 0 },
   { char: 'G', left: 7, right: 0 },
