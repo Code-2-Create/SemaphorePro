@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AppMode, TrainingSession } from "./types";
 import PracticeMode from "./components/PracticeMode";
 import Dictionary from "./components/Dictionary";
@@ -493,6 +494,7 @@ const App: React.FC = () => {
         </div>
       </footer>
       <Analytics />
+      <SpeedInsights />
     </div>
   );
 };
