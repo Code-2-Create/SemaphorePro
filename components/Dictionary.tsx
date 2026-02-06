@@ -791,7 +791,7 @@ const Dictionary: React.FC = () => {
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               {/* Flag Image */}
-              <div className="flex justify-center bg-slate-50 rounded-2xl p-6 border-2 border-slate-200">
+              <div className="flex  justify-center bg-slate-50 rounded-none p-6 border-2 border-slate-200">
                 <img
                   src={getFlagSrc(natoAlphabetData[selectedNATOLetter].image)}
                   alt={`${natoAlphabetData[selectedNATOLetter].word} flag`}

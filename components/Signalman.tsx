@@ -16,6 +16,7 @@ interface SignalmanProps {
   torsoImageUrl?: string;
   elasticity?: number; // 0.0 to 1.0, where 0 = stiff, 1 = very elastic
   transitionDuration?: number; // Duration in milliseconds
+  verticalOffsetPx?: number;
 }
 
 /* -------------------- 3D FLAG CONFIG -------------------- */
@@ -222,7 +223,8 @@ const Signalman: React.FC<SignalmanProps> = ({
   animate = true,
   torsoImageUrl,
   elasticity = 0.3, // Default medium elasticity
-  transitionDuration = 300 // Default 300ms to match original
+  transitionDuration = 300, // Default 300ms to match original
+  verticalOffsetPx = 0
 }) => {
   const [currentLeftAngle, setCurrentLeftAngle] = useState(0);
   const [currentRightAngle, setCurrentRightAngle] = useState(0);
@@ -282,8 +284,18 @@ const Signalman: React.FC<SignalmanProps> = ({
     };
   }, [leftFlagAngle, rightFlagAngle, animate, transitionDuration]);
 
+  const flagOffsetStyle =
+    verticalOffsetPx !== 0 ? { transform: `translateY(${verticalOffsetPx}px)` } : undefined;
+
   return (
-    <div className={`flex justify-center items-center ${className}`} style={{ width: size, height: size, position: 'relative' }}>
+    <div
+      className={`flex justify-center items-center ${className}`}
+      style={{
+        width: size,
+        height: size,
+        position: 'relative'
+      }}
+    >
       {/* Use imported torso image or custom torsoImageUrl */}
       <img 
         src={torsoImageUrl || torsoImage} 
@@ -310,7 +322,7 @@ const Signalman: React.FC<SignalmanProps> = ({
         width="100%" 
         height="100%" 
         className="drop-shadow-lg"
-        style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, display: 'none' }}
+        style={{ position: 'absolute', top: 0, left: 0, zIndex: 1, display: 'none', ...flagOffsetStyle }}
       >
         <circle cx="100" cy="70" r="15" fill="#1e293b" />
         <path d="M 85 90 L 115 90 L 120 150 L 80 150 Z" fill="#1e293b" />
@@ -320,7 +332,7 @@ const Signalman: React.FC<SignalmanProps> = ({
         <line x1="100" y1="90" x2="100" y2="150" stroke="white" strokeWidth="1" strokeDasharray="2,2" />
         
         <g style={{ transform: `rotate(${leftSVGAngle}deg)`, transformOrigin: '100px 100px', transition: animate ? `transform ${transitionDuration}ms ease-in-out` : 'none' }}>
-          <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
+          <line x1="100" y1="200" x2="100" y2="80" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
           <line x1="100" y1="40" x2="100" y2="10" stroke="#475569" strokeWidth="3" />
         </g>
         
@@ -336,7 +348,7 @@ const Signalman: React.FC<SignalmanProps> = ({
         width="100%" 
         height="100%" 
         className="drop-shadow-lg"
-        style={{ position: 'absolute', top: 0, left: 0, zIndex: 3 }}
+        style={{ position: 'absolute', top: 0, left: 0, zIndex: 3, ...flagOffsetStyle }}
       >
         <g style={{ transform: `rotate(${leftSVGAngle}deg)`, transformOrigin: '100px 100px', transition: animate ? `transform ${transitionDuration}ms ease-in-out` : 'none' }}>
           <line x1="100" y1="100" x2="100" y2="40" stroke="#334155" strokeWidth="6" strokeLinecap="round" />
@@ -349,7 +361,18 @@ const Signalman: React.FC<SignalmanProps> = ({
         </g>
       </svg>
 
-      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 2 }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+          zIndex: 2,
+          ...flagOffsetStyle
+        }}
+      >
         <Canvas
           camera={{ position: [0, 0, 2.2], fov: 45 }}
           dpr={[1, 2]}
